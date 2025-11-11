@@ -1,0 +1,52 @@
+<div class="section-box checkout-section">
+  <h3>Payment</h3>
+
+  <!-- Payment Method Selection -->
+  <div class="payment-methods">
+    <label class="payment-method-option">
+      <input type="radio" name="payment-method" value="card-only" checked onchange="toggleSplitPayment()">
+      <span>Credit Card Only</span>
+    </label>
+
+    <label class="payment-method-option">
+      <input type="radio" name="payment-method" value="split" onchange="toggleSplitPayment()">
+      <span>Cash + Card Split</span>
+    </label>
+  </div>
+
+  <!-- Split Payment Inputs (hidden by default) -->
+  <div id="split-payment-inputs" class="split-payment-inputs" style="display: none;">
+    <div class="form-group">
+      <label>Cash Amount</label>
+      <input type="number" id="cash-amount" step="0.01" min="0" placeholder="0.00" oninput="calculateCardAmount()">
+    </div>
+
+    <div class="form-group">
+      <label>Card Amount (auto-calculated)</label>
+      <input type="number" id="card-amount" step="0.01" min="0" placeholder="0.00" readonly style="background: var(--bg-light);">
+    </div>
+  </div>
+
+  <!-- Email Receipt Option -->
+  <div class="email-receipt-option">
+    <input type="checkbox" id="email-receipt-check" onchange="toggleEmailInput()">
+    <label for="email-receipt-check">Email receipt to patient</label>
+  </div>
+
+  <div id="email-input-group" style="display: none;">
+    <div class="form-group">
+      <label>Patient Email</label>
+      <input type="email" id="receipt-email" placeholder="patient@example.com">
+    </div>
+  </div>
+
+  <!-- Checkout Button -->
+  <button class="btn btn-success btn-full" id="checkout-btn" onclick="checkout()">
+    Process Payment
+  </button>
+
+  <!-- Loading/Processing State -->
+  <div id="processing-message" style="display: none; text-align: center; margin-top: 12px;">
+    <div class="loading">Processing payment...</div>
+  </div>
+</div>

@@ -1,0 +1,683 @@
+<script>
+// ===================================================================
+// ALC POS System - Frontend JavaScript
+// ===================================================================
+
+// Global State
+let products = [];
+let categories = [];
+let locations = [];
+let cart = [];
+let currentCustomer = null;
+let appliedPromo = null;
+let currentFilter = 'All';
+let currentUser = null;
+let currentLocation = null;
+
+// ===================================================================
+// Initialization
+// ===================================================================
+
+window.onload = function() {
+  initializeApp();
+};
+
+function initializeApp() {
+  showLoading('Initializing...');
+
+  // Load user info
+  google.script.run
+    .withSuccessHandler(function(user) {
+      currentUser = user;
+      document.getElementById('user-info').innerHTML = `
+        <div class="user-info-name">${user.name}</div>
+        <div class="user-info-email">${user.email}</div>
+      `;
+      document.getElementById('collector-initials').value = user.initials;
+    })
+    .withFailureHandler(showError)
+    .getCurrentUser();
+
+  // Load locations
+  google.script.run
+    .withSuccessHandler(function(locs) {
+      locations = locs;
+      if (locs.length > 1) {
+        // Show location selector
+        document.getElementById('location-selector').style.display = 'flex';
+        const select = document.getElementById('location-select');
+        locs.forEach(loc => {
+          const option = document.createElement('option');
+          option.value = loc.locationID;
+          option.textContent = loc.locationName;
+          select.appendChild(option);
+        });
+      }
+      currentLocation = locs[0]; // Default to first location
+    })
+    .withFailureHandler(showError)
+    .getAllLocations();
+
+  // Load provider list
+  google.script.run
+    .withSuccessHandler(function(providers) {
+      const select = document.getElementById('provider-select');
+      providers.forEach(provider => {
+        const option = document.createElement('option');
+        option.value = provider;
+        option.textContent = provider;
+        select.appendChild(option);
+      });
+    })
+    .withFailureHandler(showError)
+    .getProviderList();
+
+  // Load products
+  loadProducts();
+}
+
+function loadProducts() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      products = data;
+
+      // Extract unique categories
+      categories = ['All', ...new Set(products.map(p => p.category))];
+
+      // Render category filters
+      renderCategoryFilters();
+
+      // Render products
+      renderProducts();
+    })
+    .withFailureHandler(function(error) {
+      showError('Failed to load products: ' + error.message);
+    })
+    .getAllProducts();
+}
+
+// ===================================================================
+// Product Display
+// ===================================================================
+
+function renderCategoryFilters() {
+  const container = document.getElementById('category-filters');
+  container.innerHTML = '';
+
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === 'All' ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => filterCategory(cat);
+    container.appendChild(btn);
+  });
+}
+
+function filterCategory(category) {
+  currentFilter = category;
+
+  // Update button states
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent === category) {
+      btn.classList.add('active');
+    }
+  });
+
+  renderProducts();
+}
+
+function renderProducts() {
+  const grid = document.getElementById('product-grid');
+  const searchTerm = document.getElementById('product-search').value.toLowerCase();
+
+  // Filter products
+  const filtered = products.filter(p => {
+    const matchesCategory = currentFilter === 'All' || p.category === currentFilter;
+    const matchesSearch = searchTerm === '' ||
+                          p.sku.toLowerCase().includes(searchTerm) ||
+                          p.itemName.toLowerCase().includes(searchTerm);
+    return matchesCategory && matchesSearch;
+  });
+
+  // Update count
+  document.getElementById('product-count').textContent = `(${filtered.length})`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-cart">No products found</div>';
+    return;
+  }
+
+  // Render product cards
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card" onclick='addToCart(${JSON.stringify(p)})'>
+      <div class="product-card-sku">${p.sku}</div>
+      <div class="product-card-name">${p.itemName}</div>
+      <div class="product-card-duration">${p.duration}</div>
+      <div class="product-card-price">$${p.basePrice.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+// Search handler
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('product-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', renderProducts);
+  }
+});
+
+// ===================================================================
+// Shopping Cart
+// ===================================================================
+
+function addToCart(product) {
+  // Check if product already in cart
+  const existingIndex = cart.findIndex(item => item.sku === product.sku);
+
+  if (existingIndex >= 0) {
+    // Increase quantity
+    cart[existingIndex].quantity++;
+  } else {
+    // Add new item
+    cart.push({
+      ...product,
+      quantity: 1,
+      currentPrice: product.basePrice,
+      priceEdited: false,
+      overrideReason: null
+    });
+  }
+
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items');
+
+  if (cart.length === 0) {
+    container.innerHTML = '<div class="empty-cart">Cart is empty<br><small>Click products to add</small></div>';
+    updateTotals();
+    return;
+  }
+
+  container.innerHTML = cart.map((item, index) => `
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.itemName}</div>
+        <div class="cart-item-meta">
+          ${item.sku} × ${item.quantity}
+          ${item.priceEdited ? `<span class="cart-item-override-badge">${item.overrideReason}</span>` : ''}
+        </div>
+      </div>
+      <div class="cart-item-actions">
+        <div class="cart-item-price ${item.priceEdited ? 'edited' : ''}"
+             onclick="editPrice(${index})"
+             title="Double-click to edit">
+          $${(item.currentPrice * item.quantity).toFixed(2)}
+        </div>
+        <button class="btn-remove" onclick="removeFromCart(${index})">×</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Update cart count
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  document.getElementById('cart-count').textContent = `(${itemCount} items)`;
+
+  updateTotals();
+}
+
+function editPrice(index) {
+  const item = cart[index];
+  const currentTotal = (item.currentPrice * item.quantity).toFixed(2);
+
+  // Show price override modal
+  showModal(`
+    <h4>Edit Price - ${item.itemName}</h4>
+    <p style="color: var(--text-light); margin-bottom: 16px;">
+      Original: $${(item.basePrice * item.quantity).toFixed(2)} (${item.quantity} × $${item.basePrice.toFixed(2)})
+    </p>
+
+    <div class="override-buttons">
+      <button onclick="applyOverride(${index}, ${item.basePrice * item.quantity * 0.8}, 'Grandfathered')">Grandfathered</button>
+      <button onclick="applyOverride(${index}, ${item.basePrice * item.quantity * 0.5}, 'F&F')">F&F (50%)</button>
+    </div>
+
+    <div class="form-group">
+      <label>Or enter custom price:</label>
+      <input type="number" id="custom-price" step="0.01" value="${currentTotal}" style="width: 100%;">
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="applyCustomOverride(${index})">Apply Custom Price</button>
+    <button class="btn btn-secondary btn-full" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function applyOverride(index, newTotal, reason) {
+  cart[index].currentPrice = newTotal / cart[index].quantity;
+  cart[index].priceEdited = true;
+  cart[index].overrideReason = reason;
+  closeModal();
+  renderCart();
+}
+
+function applyCustomOverride(index) {
+  const customPrice = parseFloat(document.getElementById('custom-price').value);
+  if (isNaN(customPrice) || customPrice < 0) {
+    alert('Please enter a valid price');
+    return;
+  }
+  applyOverride(index, customPrice, 'Custom');
+}
+
+function removeFromCart(index) {
+  cart.splice(index, 1);
+  renderCart();
+}
+
+function clearCart() {
+  if (cart.length === 0) return;
+
+  if (confirm('Clear entire cart?')) {
+    cart = [];
+    appliedPromo = null;
+    document.getElementById('promo-applied').style.display = 'none';
+    document.getElementById('promo-code').value = '';
+    renderCart();
+  }
+}
+
+function updateTotals() {
+  let subtotal = cart.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0);
+
+  let discount = 0;
+  if (appliedPromo) {
+    // Calculate discount based on promo type
+    const result = calculatePromoDiscount(appliedPromo, cart);
+    discount = result.discount;
+  }
+
+  const total = subtotal - discount;
+
+  document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('discount').textContent = '-$' + discount.toFixed(2);
+  document.getElementById('total').textContent = '$' + total.toFixed(2);
+
+  if (discount > 0) {
+    document.getElementById('discount-row').style.display = 'flex';
+  } else {
+    document.getElementById('discount-row').style.display = 'none';
+  }
+
+  // Update card amount if split payment
+  if (document.querySelector('input[name="payment-method"]:checked').value === 'split') {
+    calculateCardAmount();
+  }
+}
+
+// ===================================================================
+// Customer Lookup
+// ===================================================================
+
+function lookupCustomer() {
+  const patientId = document.getElementById('patient-id').value.trim().toUpperCase();
+
+  if (!patientId) {
+    alert('Please enter a Patient ID');
+    return;
+  }
+
+  showLoading('Looking up customer...');
+
+  google.script.run
+    .withSuccessHandler(function(customer) {
+      hideLoading();
+
+      if (customer) {
+        // Existing customer found
+        currentCustomer = customer;
+        document.getElementById('customer-name').textContent = `${customer.firstName} ${customer.lastName}`;
+        document.getElementById('customer-ltv').textContent = customer.lifetimeValue.toFixed(2);
+        document.getElementById('customer-visits').textContent = customer.totalTransactions;
+        document.getElementById('customer-details').style.display = 'block';
+        document.getElementById('new-customer-form').style.display = 'none';
+
+        // Pre-fill email if available
+        if (customer.email) {
+          document.getElementById('receipt-email').value = customer.email;
+        }
+      } else {
+        // New customer
+        currentCustomer = null;
+        document.getElementById('customer-details').style.display = 'none';
+        document.getElementById('new-customer-form').style.display = 'block';
+      }
+    })
+    .withFailureHandler(function(error) {
+      hideLoading();
+      showError(error.message);
+    })
+    .findCustomer(patientId);
+}
+
+// ===================================================================
+// Promo Codes
+// ===================================================================
+
+function applyPromo() {
+  const code = document.getElementById('promo-code').value.trim().toUpperCase();
+
+  if (!code) return;
+
+  showLoading('Validating promo code...');
+
+  google.script.run
+    .withSuccessHandler(function(validation) {
+      hideLoading();
+
+      if (validation.valid) {
+        appliedPromo = validation.promo;
+        document.getElementById('promo-applied').style.display = 'flex';
+        document.getElementById('promo-text').textContent =
+          `${validation.promo.promoCode}: ${validation.promo.discountType === 'Percentage' ?
+            validation.promo.discountValue + '%' :
+            '$' + validation.promo.discountValue} off`;
+        updateTotals();
+      } else {
+        alert(validation.error);
+      }
+    })
+    .withFailureHandler(function(error) {
+      hideLoading();
+      showError(error.message);
+    })
+    .validatePromoCode(code);
+}
+
+function removePromo() {
+  appliedPromo = null;
+  document.getElementById('promo-applied').style.display = 'none';
+  document.getElementById('promo-code').value = '';
+  updateTotals();
+}
+
+function calculatePromoDiscount(promo, cart) {
+  let applicableTotal = 0;
+
+  if (promo.applicableCategories === 'ALL') {
+    applicableTotal = cart.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0);
+  } else {
+    const categories = promo.applicableCategories.split(',').map(c => c.trim().toUpperCase());
+    const skus = promo.applicableSkus ? promo.applicableSkus.split(',').map(s => s.trim().toUpperCase()) : [];
+
+    cart.forEach(item => {
+      const categoryMatch = categories.includes(item.category.toUpperCase());
+      const skuMatch = skus.length === 0 || skus.includes(item.sku.toUpperCase());
+
+      if (categoryMatch || skuMatch) {
+        applicableTotal += item.currentPrice * item.quantity;
+      }
+    });
+  }
+
+  let discount = 0;
+  if (promo.discountType === 'Percentage') {
+    discount = applicableTotal * (promo.discountValue / 100);
+  } else {
+    discount = Math.min(promo.discountValue, applicableTotal);
+  }
+
+  return {
+    applicableTotal: applicableTotal,
+    discount: discount
+  };
+}
+
+// ===================================================================
+// Payment & Checkout
+// ===================================================================
+
+function toggleSplitPayment() {
+  const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+  const splitInputs = document.getElementById('split-payment-inputs');
+
+  if (paymentMethod === 'split') {
+    splitInputs.style.display = 'block';
+    calculateCardAmount();
+  } else {
+    splitInputs.style.display = 'none';
+    document.getElementById('cash-amount').value = '';
+    document.getElementById('card-amount').value = '';
+  }
+}
+
+function calculateCardAmount() {
+  const total = parseFloat(document.getElementById('total').textContent.replace('$', ''));
+  const cashAmount = parseFloat(document.getElementById('cash-amount').value) || 0;
+  const cardAmount = Math.max(0, total - cashAmount);
+
+  document.getElementById('card-amount').value = cardAmount.toFixed(2);
+}
+
+function toggleEmailInput() {
+  const checked = document.getElementById('email-receipt-check').checked;
+  document.getElementById('email-input-group').style.display = checked ? 'block' : 'none';
+}
+
+function checkout() {
+  // Validation
+  const errors = validateCheckout();
+  if (errors.length > 0) {
+    alert('Please fix the following errors:\n\n' + errors.join('\n'));
+    return;
+  }
+
+  // Prepare checkout data
+  const checkoutData = prepareCheckoutData();
+
+  // Show processing state
+  document.getElementById('checkout-btn').disabled = true;
+  document.getElementById('processing-message').style.display = 'block';
+
+  // Call backend to process checkout
+  google.script.run
+    .withSuccessHandler(handleCheckoutSuccess)
+    .withFailureHandler(handleCheckoutError)
+    .processCheckout(checkoutData);
+}
+
+function validateCheckout() {
+  const errors = [];
+
+  // Check patient ID
+  const patientId = document.getElementById('patient-id').value.trim();
+  if (!patientId) {
+    errors.push('- Patient ID is required');
+  }
+
+  // Check provider
+  const provider = document.getElementById('provider-select').value;
+  if (!provider) {
+    errors.push('- Provider must be selected');
+  }
+
+  // Check new customer fields
+  if (!currentCustomer) {
+    const firstName = document.getElementById('first-name').value.trim();
+    const lastName = document.getElementById('last-name').value.trim();
+    if (!firstName || !lastName) {
+      errors.push('- Customer first and last name are required');
+    }
+  }
+
+  // Check cart
+  if (cart.length === 0) {
+    errors.push('- Cart is empty');
+  }
+
+  // Check split payment
+  const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+  if (paymentMethod === 'split') {
+    const cashAmount = parseFloat(document.getElementById('cash-amount').value) || 0;
+    const cardAmount = parseFloat(document.getElementById('card-amount').value) || 0;
+    const total = parseFloat(document.getElementById('total').textContent.replace('$', ''));
+
+    if (Math.abs((cashAmount + cardAmount) - total) > 0.01) {
+      errors.push('- Payment amounts do not match total');
+    }
+
+    if (cashAmount <= 0) {
+      errors.push('- Cash amount must be greater than zero for split payment');
+    }
+  }
+
+  // Check email if receipt requested
+  if (document.getElementById('email-receipt-check').checked) {
+    const email = document.getElementById('receipt-email').value.trim();
+    if (!email) {
+      errors.push('- Email address is required for receipt');
+    }
+  }
+
+  return errors;
+}
+
+function prepareCheckoutData() {
+  const patientId = document.getElementById('patient-id').value.trim().toUpperCase();
+  const provider = document.getElementById('provider-select').value;
+  const collector = document.getElementById('collector-initials').value;
+  const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+
+  const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('$', ''));
+  const discount = parseFloat(document.getElementById('discount').textContent.replace('-$', ''));
+  const total = parseFloat(document.getElementById('total').textContent.replace('$', ''));
+
+  let cashAmount = 0;
+  let cardAmount = total;
+
+  if (paymentMethod === 'split') {
+    cashAmount = parseFloat(document.getElementById('cash-amount').value) || 0;
+    cardAmount = parseFloat(document.getElementById('card-amount').value) || 0;
+  }
+
+  // Prepare price overrides
+  const priceOverrides = cart
+    .filter(item => item.priceEdited)
+    .map(item => ({
+      sku: item.sku,
+      originalPrice: item.basePrice,
+      newPrice: item.currentPrice,
+      reason: item.overrideReason
+    }));
+
+  const data = {
+    patientId: patientId,
+    providerInitials: provider,
+    collectorInitials: collector,
+    cart: cart,
+    subtotal: subtotal,
+    promoCode: appliedPromo ? appliedPromo.promoCode : null,
+    discount: discount,
+    priceOverrides: priceOverrides,
+    cashAmount: cashAmount,
+    cardAmount: cardAmount,
+    total: total,
+    locationID: currentLocation.locationID,
+    emailReceipt: document.getElementById('email-receipt-check').checked,
+    receiptEmail: document.getElementById('receipt-email').value.trim()
+  };
+
+  // Add new customer data if applicable
+  if (!currentCustomer) {
+    data.newCustomer = {
+      firstName: document.getElementById('first-name').value.trim(),
+      lastName: document.getElementById('last-name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('phone').value.trim()
+    };
+  }
+
+  return data;
+}
+
+function handleCheckoutSuccess(result) {
+  if (result.success && result.authNetToken) {
+    // Redirect to Authorize.net hosted form
+    const authNetUrl = result.hostedFormUrl;
+    window.location.href = `${authNetUrl}?token=${result.authNetToken}`;
+  } else {
+    // Cash only or other success
+    showSuccess('Transaction completed successfully!');
+    resetCheckout();
+  }
+}
+
+function handleCheckoutError(error) {
+  document.getElementById('checkout-btn').disabled = false;
+  document.getElementById('processing-message').style.display = 'none';
+  showError('Checkout failed: ' + error.message);
+}
+
+function resetCheckout() {
+  cart = [];
+  currentCustomer = null;
+  appliedPromo = null;
+
+  document.getElementById('patient-id').value = '';
+  document.getElementById('provider-select').value = '';
+  document.getElementById('customer-details').style.display = 'none';
+  document.getElementById('new-customer-form').style.display = 'none';
+  document.getElementById('promo-code').value = '';
+  document.getElementById('promo-applied').style.display = 'none';
+  document.getElementById('email-receipt-check').checked = false;
+  document.getElementById('email-input-group').style.display = 'none';
+  document.getElementById('checkout-btn').disabled = false;
+  document.getElementById('processing-message').style.display = 'none';
+
+  renderCart();
+}
+
+// ===================================================================
+// UI Helpers
+// ===================================================================
+
+function showModal(content) {
+  document.getElementById('modal-body').innerHTML = content;
+  document.getElementById('modal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+function showLoading(message) {
+  // Could implement a loading overlay here
+  console.log('Loading:', message);
+}
+
+function hideLoading() {
+  console.log('Loading complete');
+}
+
+function showError(message) {
+  alert('Error: ' + message);
+}
+
+function showSuccess(message) {
+  alert(message);
+}
+
+function changeLocation() {
+  const locationId = document.getElementById('location-select').value;
+  currentLocation = locations.find(loc => loc.locationID === locationId);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('modal');
+  if (event.target == modal) {
+    closeModal();
+  }
+};
+</script>

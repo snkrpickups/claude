@@ -1,0 +1,64 @@
+<div class="section-box customer-section">
+  <h3>Customer Information</h3>
+
+  <!-- Patient ID Lookup -->
+  <div class="form-group">
+    <label>Patient ID *</label>
+    <input type="text" id="patient-id" placeholder="e.g., JF123456" maxlength="8" style="text-transform: uppercase;">
+  </div>
+
+  <button class="btn btn-primary btn-full" onclick="lookupCustomer()">
+    Lookup Customer
+  </button>
+
+  <!-- Existing Customer Info (shown after lookup) -->
+  <div id="customer-details" style="display: none;">
+    <div class="customer-info-box">
+      <div><strong>Name:</strong> <span id="customer-name"></span></div>
+      <div><strong>Lifetime Value:</strong> $<span id="customer-ltv">0.00</span></div>
+      <div><strong>Total Visits:</strong> <span id="customer-visits">0</span></div>
+    </div>
+  </div>
+
+  <!-- New Customer Form (shown if not found) -->
+  <div id="new-customer-form" style="display: none;">
+    <div class="new-customer-alert">
+      New customer - please enter details
+    </div>
+
+    <div class="form-group">
+      <label>First Name *</label>
+      <input type="text" id="first-name" required>
+    </div>
+
+    <div class="form-group">
+      <label>Last Name *</label>
+      <input type="text" id="last-name" required>
+    </div>
+
+    <div class="form-group">
+      <label>Email (optional)</label>
+      <input type="email" id="email">
+    </div>
+
+    <div class="form-group">
+      <label>Phone (optional)</label>
+      <input type="tel" id="phone" placeholder="555-123-4567">
+    </div>
+  </div>
+
+  <!-- Provider Selection -->
+  <div class="form-group" id="provider-group" style="margin-top: 16px;">
+    <label>Provider *</label>
+    <select id="provider-select">
+      <option value="">Select Provider...</option>
+      <!-- Populated by JavaScript from Config -->
+    </select>
+  </div>
+
+  <!-- Collector Info (auto-detected) -->
+  <div class="form-group">
+    <label>Collector (You)</label>
+    <input type="text" id="collector-initials" readonly style="background: var(--bg-light);">
+  </div>
+</div>

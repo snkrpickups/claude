@@ -1,0 +1,44 @@
+<div class="section-box cart-container">
+  <h3>Shopping Cart <span id="cart-count" style="color: var(--text-light); font-weight: 400;"></span></h3>
+
+  <!-- Cart Items -->
+  <div id="cart-items" class="cart-items">
+    <div class="empty-cart">
+      Cart is empty<br>
+      <small>Click products to add</small>
+    </div>
+  </div>
+
+  <!-- Promo Code -->
+  <div class="promo-section">
+    <input type="text" id="promo-code" placeholder="Promo code" style="text-transform: uppercase;">
+    <button class="btn btn-secondary" onclick="applyPromo()">Apply</button>
+  </div>
+
+  <!-- Promo Applied Banner -->
+  <div id="promo-applied" class="promo-applied" style="display: none;">
+    <span id="promo-text"></span>
+    <button class="btn-remove" onclick="removePromo()">×</button>
+  </div>
+
+  <!-- Cart Totals -->
+  <div class="cart-totals">
+    <div class="total-row">
+      <span>Subtotal:</span>
+      <span id="subtotal">$0.00</span>
+    </div>
+    <div class="total-row" id="discount-row" style="display: none;">
+      <span>Discount:</span>
+      <span id="discount" class="discount-amount">-$0.00</span>
+    </div>
+    <div class="total-row grand-total">
+      <span>Total:</span>
+      <span id="total">$0.00</span>
+    </div>
+  </div>
+
+  <!-- Clear Cart Button -->
+  <button class="btn btn-danger btn-full" onclick="clearCart()">
+    Clear Cart
+  </button>
+</div>

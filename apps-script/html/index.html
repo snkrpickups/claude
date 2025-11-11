@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALC POS System</title>
+  <?!= include('styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-left">
+        <h1>ALC Point of Sale</h1>
+        <div class="location-selector" id="location-selector" style="display:none;">
+          <label>Location:</label>
+          <select id="location-select" onchange="changeLocation()">
+            <!-- Populated by JavaScript -->
+          </select>
+        </div>
+      </div>
+      <div class="header-right">
+        <div id="user-info" class="user-info">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Layout: Product Catalog + Cart -->
+    <div class="main-layout">
+
+      <!-- Left Side: Product Catalog -->
+      <div class="product-section">
+        <h2>Products <span id="product-count" class="product-count"></span></h2>
+
+        <!-- Category Filters -->
+        <div class="category-filters" id="category-filters">
+          <button class="filter-btn active" onclick="filterCategory('All')">All</button>
+          <!-- More buttons populated by JavaScript -->
+        </div>
+
+        <!-- Search -->
+        <input type="text" id="product-search" class="search-input" placeholder="Search products by name or SKU...">
+
+        <!-- Product Grid -->
+        <div id="product-grid" class="product-grid">
+          <div class="loading">Loading products...</div>
+        </div>
+      </div>
+
+      <!-- Right Side: Customer + Cart + Checkout -->
+      <div class="cart-section">
+        <?!= include('customer'); ?>
+        <?!= include('cart'); ?>
+        <?!= include('checkout'); ?>
+      </div>
+
+    </div>
+
+    <!-- Modal for messages -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <?!= include('scripts'); ?>
+</body>
+</html>
