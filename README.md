@@ -2,6 +2,21 @@
 
 A Google Apps Script-based POS checkout system integrated with Authorize.net for medical clinic operations.
 
+## ⚡ Quick Start (New!)
+
+**Automated Setup Available!** We now have a one-click script that sets up all 7 Google Sheets in 30 seconds:
+
+👉 **[setup-scripts/README.md](./setup-scripts/README.md)** - Automated Google Sheets setup
+
+This script automatically:
+- ✅ Creates all 7 required sheets
+- ✅ Populates all 119 products
+- ✅ Sets up headers and formatting
+- ✅ Initializes invoice tracking
+- ✅ Adds sample promo codes
+
+**Time saved: 2-3 hours!** 🚀
+
 ## 📋 What This Solves
 
 **Current Problems:**
