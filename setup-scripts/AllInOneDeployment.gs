@@ -1289,27 +1289,40 @@ function checkout() {
   document.getElementById('checkout-btn').disabled = true;
   document.getElementById('processing-message').style.display = 'block';
 
+  // Open payment window immediately to preserve user gesture
+  const paymentWindow = window.open('', '_blank');
+  if (paymentWindow) {
+    paymentWindow.document.write('<html><body><h2>Processing payment...</h2><p>Please wait while we redirect you to the payment page.</p></body></html>');
+  }
+
   google.script.run.withSuccessHandler(function(result) {
     if (result.success && result.authNetToken) {
-      // Create a form to POST to Authorize.net Accept Hosted
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = result.hostedFormUrl;
-      form.target = '_top'; // Break out of iframe sandbox
+      // Create form HTML that will auto-submit in the new window
+      const formHtml = '<!DOCTYPE html><html><body><form id="paymentForm" method="POST" action="' + result.hostedFormUrl + '">' +
+        '<input type="hidden" name="token" value="' + result.authNetToken + '" />' +
+        '</form><script>document.getElementById("paymentForm").submit();</script></body></html>';
 
-      const tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'token';
-      tokenInput.value = result.authNetToken;
-
-      form.appendChild(tokenInput);
-      document.body.appendChild(form);
-      form.submit();
+      if (paymentWindow && !paymentWindow.closed) {
+        paymentWindow.document.open();
+        paymentWindow.document.write(formHtml);
+        paymentWindow.document.close();
+      } else {
+        // Fallback: try direct navigation
+        alert('Please allow popups for this site, then try again.');
+        document.getElementById('checkout-btn').disabled = false;
+        document.getElementById('processing-message').style.display = 'none';
+      }
     } else {
+      if (paymentWindow && !paymentWindow.closed) {
+        paymentWindow.close();
+      }
       alert('Transaction completed successfully!');
       resetCheckout();
     }
   }).withFailureHandler(function(error) {
+    if (paymentWindow && !paymentWindow.closed) {
+      paymentWindow.close();
+    }
     document.getElementById('checkout-btn').disabled = false;
     document.getElementById('processing-message').style.display = 'none';
     alert('Checkout failed: ' + error.message);
