@@ -580,6 +580,10 @@ function getAcceptHostedToken(checkoutData) {
         "customer": {
           "id": checkoutData.customerID,
           "email": checkoutData.customerEmail || ""
+        },
+        "billTo": {
+          "firstName": checkoutData.firstName || "",
+          "lastName": checkoutData.lastName || ""
         }
       },
       "hostedPaymentSettings": {
@@ -590,6 +594,32 @@ function getAcceptHostedToken(checkoutData) {
               "showReceipt": true,
               "url": checkoutData.returnUrl,
               "cancelUrl": checkoutData.cancelUrl
+            })
+          },
+          {
+            "settingName": "hostedPaymentBillingAddressOptions",
+            "settingValue": JSON.stringify({
+              "show": true,
+              "required": false
+            })
+          },
+          {
+            "settingName": "hostedPaymentShippingAddressOptions",
+            "settingValue": JSON.stringify({
+              "show": false,
+              "required": false
+            })
+          },
+          {
+            "settingName": "hostedPaymentButtonOptions",
+            "settingValue": JSON.stringify({
+              "text": "Pay"
+            })
+          },
+          {
+            "settingName": "hostedPaymentStyleOptions",
+            "settingValue": JSON.stringify({
+              "bgColor": "#ffffff"
             })
           }
         ]
