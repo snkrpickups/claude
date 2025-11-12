@@ -1295,6 +1295,7 @@ function checkout() {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = result.hostedFormUrl;
+      form.target = '_top'; // Break out of iframe sandbox
 
       const tokenInput = document.createElement('input');
       tokenInput.type = 'hidden';
