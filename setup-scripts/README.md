@@ -2,27 +2,81 @@
 
 ## 🚀 One-Click Setup for ALC POS System
 
-This script **automatically creates and populates all 7 Google Sheets** needed for your POS system in **30 seconds**.
+Two options available - **both create a complete system in 30 seconds!**
+
+### **Option 1: Create Brand New Sheet** ⭐ Recommended
+Uses `CreateNewSheet.gs` - Creates a new Google Sheet from scratch
+- No manual sheet creation needed!
+- Run from script.google.com
+- Gives you a fresh sheet URL
+
+### **Option 2: Setup Existing Sheet**
+Uses `SetupGoogleSheets.gs` - Adds to a sheet you already created
+- You create blank sheet first
+- Run from within that sheet
+- Good if you want a specific name
 
 ---
 
-## ⚡ Quick Start (5 Minutes)
+## ⚡ Option 1: Create New Sheet (Easiest!)
 
-### Step 1: Create New Google Sheet
+**Uses:** `CreateNewSheet.gs`
+
+### Step 1: Open Apps Script (Standalone)
+1. Go to https://script.google.com
+2. Click **New Project** (top left)
+3. You'll see a blank Code.gs file
+
+### Step 2: Copy the Script
+1. Open `CreateNewSheet.gs` from this folder
+2. **Copy ALL the code** (Ctrl+A, Ctrl+C)
+3. Go back to script.google.com
+4. **Delete the default code** in Code.gs
+5. **Paste the CreateNewSheet.gs code** (Ctrl+V)
+6. Click **Save** 💾 (or Ctrl+S)
+7. You can rename the project to "ALC POS Setup" if you want
+
+### Step 3: Run the Script
+1. At the top, select function: **`createNewALCPOSSheet`** from dropdown
+2. Click the **Run** button ▶️
+3. Click **Review permissions** (first time only)
+4. Choose your Google account
+5. Click **Advanced** → **Go to Untitled project (unsafe)** → **Allow**
+
+### Step 4: Get Your Sheet URL
+1. Script will run for 30-60 seconds
+2. When done, click **View** > **Logs** (or Ctrl+Enter)
+3. You'll see: `🔗 Open this URL: https://docs.google.com/spreadsheets/...`
+4. **Copy that URL and open it in a new tab**
+5. Bookmark it!
+
+### Step 5: Done! 🎉
+- Your new sheet is ready with all 7 tabs
+- All 119 products loaded
+- Everything formatted beautifully
+
+---
+
+## ⚡ Option 2: Setup Existing Sheet
+
+**Uses:** `SetupGoogleSheets.gs`
+
+### Step 1: Create Blank Sheet
 1. Go to https://sheets.google.com
 2. Click **+ Blank** to create new spreadsheet
 3. Rename it to: `ALC_POS_System`
 
-### Step 2: Open Apps Script
+### Step 2: Open Apps Script (From Sheet)
 1. In your sheet, click **Extensions** > **Apps Script**
-2. You'll see a default `Code.gs` file with some code
+2. You'll see a default `Code.gs` file
 
-### Step 3: Replace with Setup Script
-1. **Delete all the default code** in Code.gs
-2. Open the file `SetupGoogleSheets.gs` from this folder
-3. **Copy all the code** (Ctrl+A, Ctrl+C)
-4. **Paste into Code.gs** in Apps Script (Ctrl+V)
-5. Click the **Save** icon 💾 (or Ctrl+S)
+### Step 3: Copy the Script
+1. Open `SetupGoogleSheets.gs` from this folder
+2. **Copy ALL the code** (Ctrl+A, Ctrl+C)
+3. Go back to Apps Script editor
+4. **Delete the default code** in Code.gs
+5. **Paste the SetupGoogleSheets.gs code** (Ctrl+V)
+6. Click **Save** 💾 (or Ctrl+S)
 
 ### Step 4: Run the Setup
 1. At the top, select function: **`setupALCPOSSystem`** from dropdown
