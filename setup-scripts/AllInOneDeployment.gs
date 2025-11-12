@@ -1291,8 +1291,19 @@ function checkout() {
 
   google.script.run.withSuccessHandler(function(result) {
     if (result.success && result.authNetToken) {
-      const authNetUrl = result.hostedFormUrl;
-      window.location.href = authNetUrl + '?token=' + result.authNetToken;
+      // Create a form to POST to Authorize.net Accept Hosted
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = result.hostedFormUrl;
+
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = result.authNetToken;
+
+      form.appendChild(tokenInput);
+      document.body.appendChild(form);
+      form.submit();
     } else {
       alert('Transaction completed successfully!');
       resetCheckout();
