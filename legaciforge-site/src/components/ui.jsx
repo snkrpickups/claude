@@ -1,5 +1,20 @@
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion'
+
+// ── Smooth count-up number (currency / percentages) ───────────────────────
+export function AnimatedNumber({ value, format = (v) => Math.round(v).toLocaleString(), className = '' }) {
+  const mv = useMotionValue(value)
+  const [text, setText] = useState(() => format(value))
+  useEffect(() => {
+    const controls = animate(mv, value, {
+      duration: 0.7,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (v) => setText(format(v)),
+    })
+    return () => controls.stop()
+  }, [value])
+  return <span className={`tabular-nums ${className}`}>{text}</span>
+}
 
 // ── Content resolver ──────────────────────────────────────────────────────
 // Returns the real value once it's filled in; until then shows the polished

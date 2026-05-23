@@ -1,9 +1,11 @@
 import Hero from './sections/Hero'
 import Lineup from './sections/Lineup'
 import DetailPanels from './sections/DetailPanels'
+import Calculator from './sections/Calculator'
 import WhyItMatters from './sections/WhyItMatters'
 import WhoWeAre from './sections/WhoWeAre'
 import ProgramGrid from './sections/ProgramGrid'
+import Waitlist from './sections/Waitlist'
 import Footer from './sections/Footer'
 import Marquee from './components/Marquee'
 
@@ -14,6 +16,7 @@ export default function App() {
       <Lineup />
       <Marquee items={['forging leaders', 'building legacies', 'veni · vidi · novi']} tone="ember" />
       <DetailPanels />
+      <Calculator />
       <WhyItMatters />
       <Marquee
         items={['legacy is not inherited', 'it’s forged', 'as iron sharpens iron']}
@@ -22,6 +25,7 @@ export default function App() {
       />
       <WhoWeAre />
       <ProgramGrid />
+      <Waitlist />
       <Footer />
     </main>
   )

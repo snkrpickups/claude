@@ -53,6 +53,36 @@ body {
 
 .font-display { font-family: var(--font-display); }
 
+/* Molten range slider */
+.lf-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+.lf-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-bone);
+  border: 3px solid var(--color-ember);
+  box-shadow: 0 0 16px rgba(217, 116, 42, 0.6);
+  transition: transform 0.15s ease;
+}
+.lf-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.lf-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-bone);
+  border: 3px solid var(--color-ember);
+  box-shadow: 0 0 16px rgba(217, 116, 42, 0.6);
+}
+
 /* Editorial display headline sizing */
 .headline {
   font-family: var(--font-display);

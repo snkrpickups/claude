@@ -184,3 +184,40 @@ export const footer = {
   socials: [{ label: 'LinkedIn', href: 'https://linkedin.com/company/legaci-forge' }],
   legal: '© 2026 Legaci Forge. All rights reserved. A 501(c)(3) educational nonprofit. IRS determination pending.',
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  CALCULATOR — "Business of YOU™: run the numbers"
+//  Estimate-only engagement tool. Adjust defaults/labels freely.
+// ─────────────────────────────────────────────────────────────────────────
+export const calculator = {
+  label: 'business of you™',
+  heading: 'run the numbers.',
+  sub: 'The contract is the headline. What you keep is the story. Move the sliders.',
+  hook: '78% of pro athletes are under financial stress within two years of retiring. The Business of YOU™ exists so you’re not one of them.',
+  disclaimer: 'Rough estimate for illustration only — not financial, tax, or legal advice.',
+  inputs: {
+    deal: { label: 'Deal value', min: 50000, max: 10000000, step: 50000, default: 1000000, prefix: '$' },
+    tax: { label: 'Taxes (federal + state)', min: 0, max: 50, step: 1, default: 37, suffix: '%' },
+    agent: { label: 'Agent / management', min: 0, max: 20, step: 0.5, default: 10, suffix: '%' },
+    expenses: { label: 'Training, travel & lifestyle', min: 0, max: 40, step: 1, default: 15, suffix: '%' },
+  },
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  WAITLIST — "Join The Forge"
+//  Set `endpoint` to a Formspree/Mailchimp/your-API URL to go live. While it's
+//  empty the form runs in demo mode (validates + shows the success state, no
+//  network call). The field posts as { email } via POST JSON.
+// ─────────────────────────────────────────────────────────────────────────
+export const waitlist = {
+  label: 'join the forge',
+  heading: 'The next class is forming.',
+  sub: 'Be first to know when applications open. No spam — just the work.',
+  scarcity: 'founding cohort · limited seats',
+  placeholder: 'your email',
+  cta: 'request access',
+  success: 'You’re on the list. Welcome to the forge.',
+  error: 'Something went wrong. Try again or email us directly.',
+  endpoint: '', // e.g. 'https://formspree.io/f/xxxx'
+}
+
