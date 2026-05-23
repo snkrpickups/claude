@@ -26,6 +26,14 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+/* Gentle full-screen reveals — proximity (not mandatory) so it nudges
+   sections into view without trapping the scroll-pinned program panels. */
+@media (min-width: 768px) and (pointer: fine) {
+  html {
+    scroll-snap-type: y proximity;
+  }
+}
+
 body {
   margin: 0;
   background: var(--color-ink);

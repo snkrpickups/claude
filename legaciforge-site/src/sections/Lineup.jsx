@@ -8,7 +8,7 @@ export default function Lineup() {
   const item = programs[active]
 
   return (
-    <section id="programs" className="relative min-h-[100svh] w-full overflow-hidden bg-ink">
+    <section id="programs" className="relative min-h-[100svh] w-full snap-start overflow-hidden bg-ink">
       {/* Full-bleed background that swaps with the active selection */}
       <AnimatePresence mode="sync">
         <motion.div

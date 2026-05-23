@@ -8,21 +8,25 @@ export default function Footer() {
     <footer className="relative w-full overflow-hidden bg-ink px-5 pb-12 pt-28 sm:px-8 sm:pt-36">
       <div className="mx-auto max-w-[1500px]">
         {/* Large closing brand line */}
-        <h2 className="headline text-[14vw] leading-[0.9] sm:text-[10vw] lg:text-[8vw]">
+        <motion.h2
+          className="headline text-[14vw] leading-[0.9] sm:text-[10vw] lg:text-[8vw]"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-10%' }}
+          variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+        >
           {lines.map((line, i) => (
             <span key={i} className="block overflow-hidden">
               <motion.span
                 className="block"
-                initial={{ y: '110%' }}
-                whileInView={{ y: 0 }}
-                viewport={{ once: true, margin: '-10%' }}
-                transition={{ duration: 1, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                variants={{ hidden: { y: '110%' }, show: { y: 0 } }}
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
               >
                 {line}
               </motion.span>
             </span>
           ))}
-        </h2>
+        </motion.h2>
 
         {/* Motto + scripture motifs */}
         <div className="mt-10 flex flex-col gap-1 font-display text-sm uppercase tracking-[0.25em] text-ember">
