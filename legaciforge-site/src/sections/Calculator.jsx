@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { calculator as cfg } from '../data/content'
-import { Pill, AnimatedNumber } from '../components/ui'
+import { AnimatedNumber } from '../components/ui'
 
 const usd = (v) =>
   '$' + Math.round(v).toLocaleString('en-US', { maximumFractionDigits: 0 })
@@ -9,9 +9,12 @@ const usd = (v) =>
 export default function Calculator() {
   const { inputs } = cfg
   const [deal, setDeal] = useState(inputs.deal.default)
-  const [tax, setTax] = useState(inputs.tax.default)
+  const [stateCode, setStateCode] = useState(cfg.defaultState)
   const [agent, setAgent] = useState(inputs.agent.default)
   const [expenses, setExpenses] = useState(inputs.expenses.default)
+
+  const stateObj = cfg.states.find((s) => s.code === stateCode) ?? cfg.states[0]
+  const tax = cfg.federalRate + stateObj.rate
 
   const { taxAmt, agentAmt, expAmt, keep, keepPct } = useMemo(() => {
     const taxAmt = deal * (tax / 100)
@@ -46,7 +49,37 @@ export default function Calculator() {
               onChange={setDeal}
               display={usd(deal)}
             />
-            <Slider cfg={inputs.tax} value={tax} onChange={setTax} display={`${tax}%`} />
+
+            {/* State selector → auto-calculates the tax rate */}
+            <div className="block">
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm uppercase tracking-[0.12em] text-bone/60">Your state</span>
+                <span className="font-display text-xl text-bone">{tax.toFixed(1)}% tax</span>
+              </div>
+              <div className="relative mt-3">
+                <select
+                  value={stateCode}
+                  onChange={(e) => setStateCode(e.target.value)}
+                  aria-label="Select your state"
+                  className="w-full appearance-none rounded-full border border-bone/20 bg-ink/60 px-6 py-3.5 pr-12 font-display text-lg text-bone outline-none transition-colors focus:border-ember"
+                >
+                  {cfg.states.map((s) => (
+                    <option key={s.code} value={s.code} className="bg-ink text-bone">
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-ember">▾</span>
+              </div>
+              <p className="mt-2 text-xs text-bone/45">
+                {stateObj.rate === 0 ? (
+                  <span className="text-ember">{cfg.noTaxNote}</span>
+                ) : (
+                  `federal ${cfg.federalRate}% + ${stateObj.code} ${stateObj.rate}%`
+                )}
+              </p>
+            </div>
+
             <Slider cfg={inputs.agent} value={agent} onChange={setAgent} display={`${agent}%`} />
             <Slider cfg={inputs.expenses} value={expenses} onChange={setExpenses} display={`${expenses}%`} />
           </div>
@@ -95,9 +128,11 @@ export default function Calculator() {
               {cfg.hook}
             </motion.p>
 
-            <div className="mt-6">
-              <Pill>{cfg.disclaimer}</Pill>
-            </div>
+            <p className="mt-6 text-xs leading-relaxed text-bone/40">
+              <span className="text-bone/30">[ </span>
+              {cfg.disclaimer}
+              <span className="text-bone/30"> ]</span>
+            </p>
           </div>
         </div>
       </div>
