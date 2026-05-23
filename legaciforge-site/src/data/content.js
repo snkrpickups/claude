@@ -207,6 +207,19 @@ export const calculator = {
     horizonLabel: 'in {years} years',
     note: 'Hypothetical — assumes a {rate}% average annual return, compounded. Not a guarantee or financial advice.',
     backLabel: 'choose another path',
+    // Inline lead-capture form opened by a path CTA. Set `endpoint` to a
+    // Formspree/Mailchimp/your-API URL to go live; while empty it runs in demo
+    // mode. Posts JSON: { name, email, interest, deal, state, taxPct,
+    // takeHome, path, horizonYears, projectedValue }.
+    lead: {
+      sub: 'Drop your details and we’ll help you build the plan behind this number.',
+      name: 'first name',
+      email: 'your email',
+      cta: 'send it to the forge',
+      success: 'We’ve got it. The forge will be in touch.',
+      error: 'Something went wrong — try again, or email us directly.',
+      endpoint: '',
+    },
     options: [
       {
         id: 'passive',

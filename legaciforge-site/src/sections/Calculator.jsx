@@ -6,8 +6,7 @@ import { AnimatedNumber, Logo, ArrowLink } from '../components/ui'
 const usd = (v) =>
   '$' + Math.round(v).toLocaleString('en-US', { maximumFractionDigits: 0 })
 
-const contactHref = (interest) =>
-  `${brand.contactPath.split('#')[0]}?interest=${interest}${brand.contactPath.includes('#') ? '#' + brand.contactPath.split('#')[1] : ''}`
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function Calculator() {
   const { inputs } = cfg
@@ -154,6 +153,7 @@ export default function Calculator() {
         {/* "What do you do with it?" reveal step */}
         <WhatNow
           keep={keep}
+          ctx={{ deal, state: stateObj.name, taxPct: Number(tax.toFixed(1)), takeHome: Math.round(keep) }}
           open={pathOpen}
           setOpen={setPathOpen}
           pathId={pathId}
@@ -203,7 +203,7 @@ function Slider({ cfg, value, onChange, display }) {
 }
 
 // ── "What do you do with it?" reveal: paths → compound projection / contact ──
-function WhatNow({ keep, open, setOpen, pathId, setPathId }) {
+function WhatNow({ keep, ctx, open, setOpen, pathId, setPathId }) {
   const { paths } = cfg
   const ease = [0.16, 1, 0.3, 1]
   const selected = paths.options.find((o) => o.id === pathId)
@@ -260,17 +260,15 @@ function WhatNow({ keep, open, setOpen, pathId, setPathId }) {
               >
                 <p className="text-lg text-bone/85">{selected.message}</p>
                 <div className="mt-6 flex flex-col items-center gap-4">
-                  <ArrowLink
-                    href={contactHref(selected.interest)}
-                    className="font-display text-2xl lowercase"
-                  >
-                    {selected.cta}
-                  </ArrowLink>
+                  <CtaForm
+                    cta={selected.cta}
+                    payload={{ interest: selected.interest, ...ctx, path: 'undecided' }}
+                  />
                   <BackButton label={paths.backLabel} onClick={() => setPathId(null)} />
                 </div>
               </motion.div>
             ) : (
-              <Projection key="proj" path={selected} keep={keep} onBack={() => setPathId(null)} />
+              <Projection key="proj" path={selected} keep={keep} ctx={ctx} onBack={() => setPathId(null)} />
             )}
           </AnimatePresence>
         </motion.div>
@@ -279,7 +277,7 @@ function WhatNow({ keep, open, setOpen, pathId, setPathId }) {
   )
 }
 
-function Projection({ path, keep, onBack }) {
+function Projection({ path, keep, ctx, onBack }) {
   const { paths } = cfg
   const [years, setYears] = useState(paths.defaultHorizon)
   const fv = keep * Math.pow(1 + path.rate / 100, years)
@@ -329,9 +327,16 @@ function Projection({ path, keep, onBack }) {
       </p>
 
       <div className="mt-6 flex flex-col items-center gap-4">
-        <ArrowLink href={contactHref(path.interest)} className="font-display text-2xl lowercase">
-          {path.cta}
-        </ArrowLink>
+        <CtaForm
+          cta={path.cta}
+          payload={{
+            interest: path.interest,
+            ...ctx,
+            path: path.label,
+            horizonYears: years,
+            projectedValue: Math.round(fv),
+          }}
+        />
         <BackButton label={paths.backLabel} onClick={onBack} />
       </div>
     </motion.div>
@@ -367,5 +372,112 @@ function BackButton({ label, onClick }) {
     >
       ← {label}
     </button>
+  )
+}
+
+// CTA that reveals an inline lead form carrying the full calculator context.
+function CtaForm({ cta, payload }) {
+  const [show, setShow] = useState(false)
+  if (show) return <LeadForm payload={payload} />
+  return (
+    <button
+      type="button"
+      onClick={() => setShow(true)}
+      className="group inline-flex items-center gap-2 font-display text-2xl lowercase text-bone transition-colors hover:text-ember"
+    >
+      {cta}
+      <span className="text-ember transition-transform duration-300 group-hover:translate-x-1">→</span>
+    </button>
+  )
+}
+
+function LeadForm({ payload }) {
+  const c = cfg.paths.lead
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('idle') // idle | loading | done | error
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!name.trim() || !EMAIL_RE.test(email)) {
+      setStatus('error')
+      return
+    }
+    setStatus('loading')
+    const body = { name: name.trim(), email: email.trim(), ...payload }
+    if (c.endpoint) {
+      try {
+        const res = await fetch(c.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(body),
+        })
+        setStatus(res.ok ? 'done' : 'error')
+      } catch {
+        setStatus('error')
+      }
+    } else {
+      setTimeout(() => setStatus('done'), 600) // demo mode
+    }
+  }
+
+  if (status === 'done') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-2 font-display text-lg lowercase text-ember"
+      >
+        <span>◆</span>
+        {c.success}
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.form
+      onSubmit={submit}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full max-w-md text-center"
+    >
+      <p className="text-sm text-bone/60">{c.sub}</p>
+      <div className="mt-4 flex flex-col gap-3">
+        <input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value)
+            if (status === 'error') setStatus('idle')
+          }}
+          placeholder={c.name}
+          aria-label="first name"
+          className="rounded-full border border-bone/20 bg-ink/60 px-5 py-3 text-bone outline-none transition-colors placeholder:text-bone/40 focus:border-ember"
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            if (status === 'error') setStatus('idle')
+          }}
+          placeholder={c.email}
+          aria-label="email"
+          className="rounded-full border border-bone/20 bg-ink/60 px-5 py-3 text-bone outline-none transition-colors placeholder:text-bone/40 focus:border-ember"
+        />
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="group inline-flex items-center justify-center gap-2 rounded-full bg-ember px-6 py-3 font-display text-base lowercase text-ink transition-all duration-300 hover:bg-bone disabled:opacity-60"
+        >
+          {status === 'loading' ? 'forging…' : c.cta}
+          <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+        </button>
+      </div>
+      {status === 'error' && (
+        <p className="mt-2 text-sm text-ember">
+          {!name.trim() ? 'Enter your name.' : !EMAIL_RE.test(email) ? 'Enter a valid email.' : c.error}
+        </p>
+      )}
+    </motion.form>
   )
 }
