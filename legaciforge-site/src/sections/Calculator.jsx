@@ -16,18 +16,20 @@ export default function Calculator() {
   const stateObj = cfg.states.find((s) => s.code === stateCode) ?? cfg.states[0]
   const tax = cfg.federalRate + stateObj.rate
 
-  const { taxAmt, agentAmt, expAmt, keep, keepPct } = useMemo(() => {
-    const taxAmt = deal * (tax / 100)
+  const { fedAmt, stateAmt, agentAmt, expAmt, keep, keepPct } = useMemo(() => {
+    const fedAmt = deal * (cfg.federalRate / 100)
+    const stateAmt = deal * (stateObj.rate / 100)
     const agentAmt = deal * (agent / 100)
     const expAmt = deal * (expenses / 100)
-    const keep = Math.max(0, deal - taxAmt - agentAmt - expAmt)
-    return { taxAmt, agentAmt, expAmt, keep, keepPct: deal ? (keep / deal) * 100 : 0 }
-  }, [deal, tax, agent, expenses])
+    const keep = Math.max(0, deal - fedAmt - stateAmt - agentAmt - expAmt)
+    return { fedAmt, stateAmt, agentAmt, expAmt, keep, keepPct: deal ? (keep / deal) * 100 : 0 }
+  }, [deal, stateObj.rate, agent, expenses])
 
   const segments = [
-    { label: 'taxes', amt: taxAmt, color: '#6f7882' },
+    { label: 'federal tax', amt: fedAmt, color: '#7c8590' },
+    { label: `${stateObj.code} tax`, amt: stateAmt, color: '#454d59' },
     { label: 'agent', amt: agentAmt, color: '#8f3f12' },
-    { label: 'expenses', amt: expAmt, color: '#3d4350' },
+    { label: 'expenses', amt: expAmt, color: '#2b303a' },
     { label: 'you keep', amt: keep, color: '#d9742a' },
   ]
 
@@ -112,7 +114,7 @@ export default function Calculator() {
                 />
               ))}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
               {segments.map((s) => (
                 <div key={s.label} className="flex flex-col">
                   <span className="flex items-center gap-1.5 text-[0.7rem] uppercase tracking-[0.12em] text-bone/55">
