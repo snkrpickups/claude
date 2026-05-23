@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { calculator as cfg, brand, assets } from '../data/content'
 import { AnimatedNumber, Logo, ArrowLink } from '../components/ui'
 
 const usd = (v) =>
   '$' + Math.round(v).toLocaleString('en-US', { maximumFractionDigits: 0 })
+
+const contactHref = (interest) =>
+  `${brand.contactPath.split('#')[0]}?interest=${interest}${brand.contactPath.includes('#') ? '#' + brand.contactPath.split('#')[1] : ''}`
 
 export default function Calculator() {
   const { inputs } = cfg
@@ -12,6 +15,8 @@ export default function Calculator() {
   const [stateCode, setStateCode] = useState(cfg.defaultState)
   const [agent, setAgent] = useState(inputs.agent.default)
   const [expenses, setExpenses] = useState(inputs.expenses.default)
+  const [pathOpen, setPathOpen] = useState(false)
+  const [pathId, setPathId] = useState(null)
 
   const stateObj = cfg.states.find((s) => s.code === stateCode) ?? cfg.states[0]
   const tax = cfg.federalRate + stateObj.rate
@@ -145,6 +150,15 @@ export default function Calculator() {
             </p>
           </div>
         </div>
+
+        {/* "What do you do with it?" reveal step */}
+        <WhatNow
+          keep={keep}
+          open={pathOpen}
+          setOpen={setPathOpen}
+          pathId={pathId}
+          setPathId={setPathId}
+        />
       </div>
 
       {/* Bottom CTA — enter the rest of the site */}
@@ -185,5 +199,173 @@ function Slider({ cfg, value, onChange, display }) {
         }}
       />
     </label>
+  )
+}
+
+// ── "What do you do with it?" reveal: paths → compound projection / contact ──
+function WhatNow({ keep, open, setOpen, pathId, setPathId }) {
+  const { paths } = cfg
+  const ease = [0.16, 1, 0.3, 1]
+  const selected = paths.options.find((o) => o.id === pathId)
+
+  return (
+    <div className="mt-16 border-t border-bone/15 pt-12">
+      {!open ? (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="group inline-flex items-center gap-3 font-display text-3xl lowercase text-bone transition-colors hover:text-ember sm:text-4xl"
+          >
+            {paths.prompt}
+            <span className="text-ember transition-transform duration-300 group-hover:translate-y-1">↓</span>
+          </button>
+        </div>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}>
+          <p className="text-center font-display text-2xl lowercase text-bone/90 sm:text-3xl">
+            {paths.question} <span className="text-ember">{usd(keep)}</span>?
+          </p>
+
+          <AnimatePresence mode="wait">
+            {!selected ? (
+              <motion.div
+                key="cards"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+              >
+                {paths.options.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => setPathId(o.id)}
+                    className="group flex flex-col rounded-2xl border border-bone/15 bg-char/60 p-6 text-left transition-all duration-300 hover:border-ember hover:bg-char"
+                  >
+                    <span className="headline text-2xl lowercase">{o.label}</span>
+                    <span className="mt-2 text-sm text-bone/75">{o.tagline}</span>
+                    <span className="mt-1 text-xs text-bone/45">{o.detail}</span>
+                    <span className="mt-4 text-ember transition-transform duration-300 group-hover:translate-x-1">→</span>
+                  </button>
+                ))}
+              </motion.div>
+            ) : selected.contact ? (
+              <motion.div
+                key="contact"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mx-auto mt-8 max-w-xl rounded-2xl border border-bone/15 bg-char/60 p-8 text-center"
+              >
+                <p className="text-lg text-bone/85">{selected.message}</p>
+                <div className="mt-6 flex flex-col items-center gap-4">
+                  <ArrowLink
+                    href={contactHref(selected.interest)}
+                    className="font-display text-2xl lowercase"
+                  >
+                    {selected.cta}
+                  </ArrowLink>
+                  <BackButton label={paths.backLabel} onClick={() => setPathId(null)} />
+                </div>
+              </motion.div>
+            ) : (
+              <Projection key="proj" path={selected} keep={keep} onBack={() => setPathId(null)} />
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+    </div>
+  )
+}
+
+function Projection({ path, keep, onBack }) {
+  const { paths } = cfg
+  const [years, setYears] = useState(paths.defaultHorizon)
+  const fv = keep * Math.pow(1 + path.rate / 100, years)
+  const pctOfFv = fv ? (keep / fv) * 100 : 100
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="mx-auto mt-8 max-w-2xl rounded-2xl border border-bone/15 bg-char/60 p-8 text-center"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <span className="text-sm uppercase tracking-[0.15em] text-bone/55">{path.label.toLowerCase()} —</span>
+        {paths.horizons.map((y) => (
+          <button
+            key={y}
+            type="button"
+            onClick={() => setYears(y)}
+            className={`rounded-full border px-3 py-1 font-display text-sm uppercase tracking-[0.1em] transition-all ${
+              y === years ? 'border-ember bg-ember text-ink' : 'border-bone/25 text-bone/60 hover:border-bone/50'
+            }`}
+          >
+            {y}y
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-6 text-xs uppercase tracking-[0.2em] text-bone/50">{paths.projectionLead}</p>
+      <div className="headline mt-2 text-6xl text-ember sm:text-7xl">
+        <AnimatedNumber value={fv} format={usd} />
+      </div>
+      <p className="mt-1 font-display text-lg text-bone/60">
+        {paths.horizonLabel.replace('{years}', years)}
+      </p>
+
+      {/* today vs projected bars */}
+      <div className="mt-7 space-y-3 text-left">
+        <Bar label="today" amount={keep} widthPct={pctOfFv} color="#7c8590" />
+        <Bar label={`in ${years} years`} amount={fv} widthPct={100} color="#d9742a" />
+      </div>
+
+      <p className="mt-6 text-xs leading-relaxed text-bone/40">
+        <span className="text-bone/30">[ </span>
+        {paths.note.replace('{rate}', path.rate)}
+        <span className="text-bone/30"> ]</span>
+      </p>
+
+      <div className="mt-6 flex flex-col items-center gap-4">
+        <ArrowLink href={contactHref(path.interest)} className="font-display text-2xl lowercase">
+          {path.cta}
+        </ArrowLink>
+        <BackButton label={paths.backLabel} onClick={onBack} />
+      </div>
+    </motion.div>
+  )
+}
+
+function Bar({ label, amount, widthPct, color }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-sm">
+        <span className="text-[0.7rem] uppercase tracking-[0.12em] text-bone/55">{label}</span>
+        <span className="font-display text-bone">{usd(amount)}</span>
+      </div>
+      <div className="mt-1 h-3 w-full overflow-hidden rounded-full bg-bone/10">
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.max(2, widthPct)}%` }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function BackButton({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-xs uppercase tracking-[0.15em] text-bone/45 transition-colors hover:text-bone"
+    >
+      ← {label}
+    </button>
   )
 }
