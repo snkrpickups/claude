@@ -14,7 +14,7 @@ export default function Hero() {
   const lines = motifs.headlinePrimary.split('\n')
 
   return (
-    <section ref={ref} className="relative h-[100svh] w-full snap-start overflow-hidden bg-ink">
+    <section id="enter" ref={ref} className="relative h-[100svh] w-full snap-start overflow-hidden bg-ink">
       {/* Static fallback (shown when WebGL/motion is unavailable) */}
       <div className="absolute inset-0">
         <MediaField src={assets.forge} palette={['#c6822f', '#120a04']} className="h-full w-full" />

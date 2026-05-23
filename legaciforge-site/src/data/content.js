@@ -192,9 +192,11 @@ export const footer = {
 export const calculator = {
   label: 'business of you™',
   heading: 'run the numbers.',
-  sub: 'The contract is the headline. What you keep is the story. Pick your state.',
+  sub: 'Before you sign anything, see what you actually keep. Pick your state.',
   hook: '78% of pro athletes are under financial stress within two years of retiring. The Business of YOU™ exists so you’re not one of them.',
   disclaimer: 'Rough estimate for illustration only — not financial, tax, or legal advice. Uses top marginal rates.',
+  enterCta: 'enter the forge',
+  enterNote: 'this is one tool. see what we’re building.',
   // Tax = federalRate + the selected state's top marginal income-tax rate.
   federalRate: 37,
   defaultState: 'CA',

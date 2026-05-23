@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { calculator as cfg } from '../data/content'
-import { AnimatedNumber } from '../components/ui'
+import { calculator as cfg, brand, assets } from '../data/content'
+import { AnimatedNumber, Logo, ArrowLink } from '../components/ui'
 
 const usd = (v) =>
   '$' + Math.round(v).toLocaleString('en-US', { maximumFractionDigits: 0 })
@@ -32,8 +32,16 @@ export default function Calculator() {
   ]
 
   return (
-    <section className="relative w-full snap-start bg-ink px-5 py-24 sm:px-8 sm:py-32">
-      <div className="mx-auto max-w-[1300px]">
+    <section id="top" className="relative flex min-h-[100svh] w-full snap-start flex-col bg-ink px-5 pb-14 pt-5 sm:px-8 sm:pt-7">
+      {/* Landing top bar */}
+      <header className="flex items-center justify-between">
+        <Logo src={assets.logo} name={brand.name} className="h-9 w-auto text-xl sm:h-11" />
+        <ArrowLink href="#enter" className="text-xs uppercase tracking-[0.2em] text-bone/70">
+          enter
+        </ArrowLink>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-[1300px] flex-1 flex-col justify-center py-10">
         <div className="flex items-baseline gap-3 font-display text-sm uppercase tracking-[0.25em] text-ember">
           {cfg.label}
         </div>
@@ -135,6 +143,20 @@ export default function Calculator() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Bottom CTA — enter the rest of the site */}
+      <div className="mx-auto flex w-full max-w-[1300px] flex-col items-center gap-3 border-t border-bone/15 pt-10 text-center">
+        <span className="text-xs uppercase tracking-[0.2em] text-bone/45">{cfg.enterNote}</span>
+        <ArrowLink href="#enter" className="headline text-4xl lowercase sm:text-6xl">
+          {cfg.enterCta}
+        </ArrowLink>
+        <motion.span
+          className="mt-1 block h-8 w-px bg-gradient-to-b from-ember to-transparent"
+          animate={{ scaleY: [0.3, 1, 0.3], opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ transformOrigin: 'top' }}
+        />
       </div>
     </section>
   )
