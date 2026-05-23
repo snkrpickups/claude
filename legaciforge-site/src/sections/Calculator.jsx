@@ -27,7 +27,7 @@ export default function Calculator() {
 
   const segments = [
     { label: 'federal tax', amt: fedAmt, color: '#7c8590' },
-    { label: `${stateObj.code} tax`, amt: stateAmt, color: '#454d59' },
+    { label: `${stateObj.code} tax`, amt: stateAmt, color: '#cf3a2e' },
     { label: 'agent', amt: agentAmt, color: '#8f3f12' },
     { label: 'expenses', amt: expAmt, color: '#2b303a' },
     { label: 'you keep', amt: keep, color: '#d9742a' },
