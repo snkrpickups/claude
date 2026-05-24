@@ -8,6 +8,8 @@ import ShareModal from '../components/ShareModal'
 const usd = (v) =>
   '$' + Math.round(v).toLocaleString('en-US', { maximumFractionDigits: 0 })
 
+const yrs = (n) => `${n} ${n === 1 ? 'yr' : 'yrs'}`
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const sp = getShareParams()
@@ -31,6 +33,9 @@ export default function Calculator() {
     inRange(sp.deal, inputs.deal.min, inputs.deal.max) ? sp.deal : inputs.deal.default,
   )
   const [stateCode, setStateCode] = useState(validState ? sp.stateCode : cfg.defaultState)
+  const [term, setTerm] = useState(
+    inRange(sp.term, inputs.term.min, inputs.term.max) ? sp.term : inputs.term.default,
+  )
   const [agent, setAgent] = useState(initialAgent)
   const [dealType, setDealType] = useState(initialDealType)
   const [expenses, setExpenses] = useState(
@@ -65,6 +70,7 @@ export default function Calculator() {
   const projected = selPath ? Math.round(keep * Math.pow(1 + selPath.rate / 100, horizon)) : null
   const shareData = {
     deal,
+    term,
     stateCode: stateObj.code,
     stateName: stateObj.name,
     taxPct: Number(tax.toFixed(1)),
@@ -104,6 +110,14 @@ export default function Calculator() {
               value={deal}
               onChange={setDeal}
               display={usd(deal)}
+              help={`${usd(deal / term)} per year over ${yrs(term)} — total guaranteed`}
+            />
+            <Slider
+              cfg={inputs.term}
+              value={term}
+              onChange={setTerm}
+              display={yrs(term)}
+              help={cfg.termHelp}
             />
 
             {/* State selector → auto-calculates the tax rate */}
@@ -162,12 +176,17 @@ export default function Calculator() {
 
           {/* Result */}
           <div className="flex flex-col justify-center">
-            <span className="text-xs uppercase tracking-[0.2em] text-bone/45">you actually keep</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-bone/45">
+              you actually keep — over {yrs(term)}
+            </span>
             <div className="headline mt-2 text-6xl text-ember sm:text-7xl lg:text-8xl">
               <AnimatedNumber value={keep} format={usd} />
             </div>
             <div className="mt-1 font-display text-xl text-bone/60">
               <AnimatedNumber value={keepPct} format={(v) => `${v.toFixed(0)}¢ of every dollar`} />
+              {' · ≈ '}
+              <AnimatedNumber value={keep / term} format={usd} />
+              /yr
             </div>
 
             <button

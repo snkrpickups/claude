@@ -365,10 +365,12 @@ export const calculator = {
   agentHelp: 'caps vary by league — pick your deal type above, or set it yourself',
   expensesHelp: 'typical: ~10–20% (training, travel, equipment & lifestyle)',
   inputs: {
-    deal: { label: 'Deal value', min: 50000, max: 10000000, step: 50000, default: 1000000, prefix: '$' },
+    deal: { label: 'Total contract value', min: 50000, max: 50000000, step: 50000, default: 4000000, prefix: '$' },
+    term: { label: 'Contract length', min: 1, max: 12, step: 1, default: 4 },
     agent: { label: 'Agent / management', min: 0, max: 20, step: 0.5, default: 15, suffix: '%' },
     expenses: { label: 'Training, travel & lifestyle', min: 0, max: 40, step: 1, default: 15, suffix: '%' },
   },
+  termHelp: 'most pro contracts run 1–5 years — this is the full guaranteed total',
 }
 
 // Flattened lookup of every deal-type/league preset.

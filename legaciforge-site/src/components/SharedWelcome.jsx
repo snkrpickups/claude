@@ -43,7 +43,8 @@ export default function SharedWelcome() {
             </span>
             {keep != null ? (
               <h2 className="headline mt-5 text-4xl lowercase sm:text-6xl">
-                on a {usd(sp.deal)} deal, {who.toLowerCase()} keeps{' '}
+                on a {usd(sp.deal)}
+                {sp.term ? ` / ${sp.term}-yr` : ''} deal, {who.toLowerCase()} keeps{' '}
                 <span className="text-ember">{usd(keep)}</span>.
               </h2>
             ) : (

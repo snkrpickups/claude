@@ -4,11 +4,12 @@ import QRCode from 'qrcode'
 //  Deep-link params: encode/decode a shared calculator scenario.
 //  Compact keys: f=from(name) d=deal s=state a=agent e=expenses p=path y=years
 // ─────────────────────────────────────────────────────────────────────────
-export function buildShareUrl({ name, deal, stateCode, agent, expenses, pathId, horizon, dealType }) {
+export function buildShareUrl({ name, deal, term, stateCode, agent, expenses, pathId, horizon, dealType }) {
   const base = window.location.origin + import.meta.env.BASE_URL
   const q = new URLSearchParams()
   if (name) q.set('f', name)
   q.set('d', deal)
+  if (term) q.set('n', term)
   q.set('s', stateCode)
   q.set('a', agent)
   q.set('e', expenses)
@@ -27,6 +28,7 @@ export function getShareParams() {
     present: true,
     name: q.get('f') || undefined,
     deal: num(q.get('d')),
+    term: num(q.get('n')),
     stateCode: q.get('s') || undefined,
     agent: num(q.get('a')),
     expenses: num(q.get('e')),
@@ -106,7 +108,10 @@ export async function renderCard({ variant = 'square', data, url }) {
   y += 90
   ctx.font = '500 30px Inter, sans-serif'
   ctx.fillStyle = 'rgba(245,243,238,0.45)'
-  ctx.fillText('ON A ' + usd(data.deal) + ' DEAL, I ACTUALLY KEEP', pad, y)
+  const dealLabel = data.term
+    ? `ON A ${usd(data.deal)} / ${data.term}-YR DEAL, I KEEP`
+    : `ON A ${usd(data.deal)} DEAL, I ACTUALLY KEEP`
+  ctx.fillText(dealLabel, pad, y)
 
   // Big number
   y += variant === 'story' ? 170 : 150
