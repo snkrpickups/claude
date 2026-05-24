@@ -8,10 +8,12 @@ import ProgramGrid from './sections/ProgramGrid'
 import Waitlist from './sections/Waitlist'
 import Footer from './sections/Footer'
 import Marquee from './components/Marquee'
+import SharedWelcome from './components/SharedWelcome'
 
 export default function App() {
   return (
     <main className="relative w-full">
+      <SharedWelcome />
       <Calculator />
       <Hero />
       <Lineup />

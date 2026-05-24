@@ -2,20 +2,33 @@ import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { calculator as cfg, brand, assets } from '../data/content'
 import { AnimatedNumber, Logo, ArrowLink } from '../components/ui'
+import { getShareParams } from '../lib/share'
+import ShareModal from '../components/ShareModal'
 
 const usd = (v) =>
   '$' + Math.round(v).toLocaleString('en-US', { maximumFractionDigits: 0 })
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const sp = getShareParams()
+const inRange = (v, lo, hi) => v != null && !Number.isNaN(v) && v >= lo && v <= hi
+const validState = sp.stateCode && cfg.states.some((s) => s.code === sp.stateCode)
+const validPath = sp.pathId && cfg.paths.options.some((o) => o.id === sp.pathId)
+
 export default function Calculator() {
   const { inputs } = cfg
-  const [deal, setDeal] = useState(inputs.deal.default)
-  const [stateCode, setStateCode] = useState(cfg.defaultState)
-  const [agent, setAgent] = useState(inputs.agent.default)
-  const [expenses, setExpenses] = useState(inputs.expenses.default)
-  const [pathOpen, setPathOpen] = useState(false)
-  const [pathId, setPathId] = useState(null)
+  const [deal, setDeal] = useState(
+    inRange(sp.deal, inputs.deal.min, inputs.deal.max) ? sp.deal : inputs.deal.default,
+  )
+  const [stateCode, setStateCode] = useState(validState ? sp.stateCode : cfg.defaultState)
+  const [agent, setAgent] = useState(inRange(sp.agent, inputs.agent.min, inputs.agent.max) ? sp.agent : inputs.agent.default)
+  const [expenses, setExpenses] = useState(
+    inRange(sp.expenses, inputs.expenses.min, inputs.expenses.max) ? sp.expenses : inputs.expenses.default,
+  )
+  const [pathOpen, setPathOpen] = useState(!!validPath)
+  const [pathId, setPathId] = useState(validPath ? sp.pathId : null)
+  const [horizon, setHorizon] = useState(cfg.paths.horizons.includes(sp.horizon) ? sp.horizon : cfg.paths.defaultHorizon)
+  const [showShare, setShowShare] = useState(false)
 
   const stateObj = cfg.states.find((s) => s.code === stateCode) ?? cfg.states[0]
   const tax = cfg.federalRate + stateObj.rate
@@ -36,6 +49,23 @@ export default function Calculator() {
     { label: 'expenses', amt: expAmt, color: '#2b303a' },
     { label: 'you keep', amt: keep, color: '#d9742a' },
   ]
+
+  const selPath = cfg.paths.options.find((o) => o.id === pathId && !o.contact)
+  const projected = selPath ? Math.round(keep * Math.pow(1 + selPath.rate / 100, horizon)) : null
+  const shareData = {
+    deal,
+    stateCode: stateObj.code,
+    stateName: stateObj.name,
+    taxPct: Number(tax.toFixed(1)),
+    agent,
+    expenses,
+    keep: Math.round(keep),
+    keepPct: Math.round(keepPct),
+    pathId: selPath?.id,
+    pathLabel: selPath?.label,
+    horizon,
+    projected,
+  }
 
   return (
     <section id="top" className="relative flex min-h-[100svh] w-full snap-start flex-col bg-ink px-5 pb-14 pt-5 sm:px-8 sm:pt-7">
@@ -108,6 +138,15 @@ export default function Calculator() {
               <AnimatedNumber value={keepPct} format={(v) => `${v.toFixed(0)}¢ of every dollar`} />
             </div>
 
+            <button
+              type="button"
+              onClick={() => setShowShare(true)}
+              className="group mt-5 inline-flex items-center gap-2 rounded-full border border-ember/60 px-5 py-2.5 font-display text-sm lowercase text-ember transition-all duration-300 hover:bg-ember hover:text-ink"
+            >
+              <span aria-hidden="true">⤴</span>
+              {cfg.share.button}
+            </button>
+
             {/* Breakdown bar */}
             <div className="mt-8 flex h-4 w-full overflow-hidden rounded-full">
               {segments.map((s) => (
@@ -158,8 +197,13 @@ export default function Calculator() {
           setOpen={setPathOpen}
           pathId={pathId}
           setPathId={setPathId}
+          horizon={horizon}
+          setHorizon={setHorizon}
+          onShare={() => setShowShare(true)}
         />
       </div>
+
+      {showShare && <ShareModal data={shareData} onClose={() => setShowShare(false)} />}
 
       {/* Bottom CTA — enter the rest of the site */}
       <div className="mx-auto flex w-full max-w-[1300px] flex-col items-center gap-3 border-t border-bone/15 pt-10 text-center">
@@ -203,7 +247,7 @@ function Slider({ cfg, value, onChange, display }) {
 }
 
 // ── "What do you do with it?" reveal: paths → compound projection / contact ──
-function WhatNow({ keep, ctx, open, setOpen, pathId, setPathId }) {
+function WhatNow({ keep, ctx, open, setOpen, pathId, setPathId, horizon, setHorizon, onShare }) {
   const { paths } = cfg
   const ease = [0.16, 1, 0.3, 1]
   const selected = paths.options.find((o) => o.id === pathId)
@@ -268,7 +312,16 @@ function WhatNow({ keep, ctx, open, setOpen, pathId, setPathId }) {
                 </div>
               </motion.div>
             ) : (
-              <Projection key="proj" path={selected} keep={keep} ctx={ctx} onBack={() => setPathId(null)} />
+              <Projection
+                key="proj"
+                path={selected}
+                keep={keep}
+                ctx={ctx}
+                years={horizon}
+                setYears={setHorizon}
+                onShare={onShare}
+                onBack={() => setPathId(null)}
+              />
             )}
           </AnimatePresence>
         </motion.div>
@@ -277,9 +330,8 @@ function WhatNow({ keep, ctx, open, setOpen, pathId, setPathId }) {
   )
 }
 
-function Projection({ path, keep, ctx, onBack }) {
+function Projection({ path, keep, ctx, years, setYears, onShare, onBack }) {
   const { paths } = cfg
-  const [years, setYears] = useState(paths.defaultHorizon)
   const fv = keep * Math.pow(1 + path.rate / 100, years)
   const pctOfFv = fv ? (keep / fv) * 100 : 100
 
@@ -337,7 +389,16 @@ function Projection({ path, keep, ctx, onBack }) {
             projectedValue: Math.round(fv),
           }}
         />
-        <BackButton label={paths.backLabel} onClick={onBack} />
+        <div className="flex items-center gap-5">
+          <button
+            type="button"
+            onClick={onShare}
+            className="text-xs uppercase tracking-[0.15em] text-ember transition-colors hover:text-bone"
+          >
+            ⤴ {cfg.share.button}
+          </button>
+          <BackButton label={paths.backLabel} onClick={onBack} />
+        </div>
       </div>
     </motion.div>
   )

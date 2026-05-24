@@ -197,6 +197,17 @@ export const calculator = {
   disclaimer: 'Rough estimate for illustration only — not financial, tax, or legal advice. Uses top marginal rates.',
   enterCta: 'enter the forge',
   enterNote: 'this is one tool. see what we’re building.',
+  share: {
+    button: 'share my number',
+    title: 'share your number',
+    sub: 'AirDrop it, text it, post it. They scan — they run theirs.',
+    namePlaceholder: 'your name (optional)',
+    shareCta: 'share',
+    saveCta: 'save image',
+    copyCta: 'copy link',
+    copied: 'link copied',
+    text: 'Most athletes have no idea what they actually keep. I ran my numbers on Legaci Forge — run yours:',
+  },
   // "What do you do with it?" reveal step (compound projection + lead capture)
   paths: {
     prompt: 'so… what do you do with it?',
