@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { calculator as cfg, brand, assets } from '../data/content'
+import { calculator as cfg, brand, assets, dealPresets } from '../data/content'
 import { AnimatedNumber, Logo, ArrowLink } from '../components/ui'
 import { getShareParams } from '../lib/share'
 import ShareModal from '../components/ShareModal'
@@ -14,6 +14,16 @@ const sp = getShareParams()
 const inRange = (v, lo, hi) => v != null && !Number.isNaN(v) && v >= lo && v <= hi
 const validState = sp.stateCode && cfg.states.some((s) => s.code === sp.stateCode)
 const validPath = sp.pathId && cfg.paths.options.some((o) => o.id === sp.pathId)
+const sharedDealType = dealPresets.find((d) => d.id === sp.dealType)
+const initialAgent = inRange(sp.agent, 0, 20)
+  ? sp.agent
+  : sharedDealType
+    ? sharedDealType.agent
+    : cfg.inputs.agent.default
+const initialDealType =
+  sp.dealType && sharedDealType
+    ? sp.dealType
+    : dealPresets.find((d) => d.agent === initialAgent)?.id ?? cfg.defaultDealType
 
 export default function Calculator() {
   const { inputs } = cfg
@@ -21,7 +31,8 @@ export default function Calculator() {
     inRange(sp.deal, inputs.deal.min, inputs.deal.max) ? sp.deal : inputs.deal.default,
   )
   const [stateCode, setStateCode] = useState(validState ? sp.stateCode : cfg.defaultState)
-  const [agent, setAgent] = useState(inRange(sp.agent, inputs.agent.min, inputs.agent.max) ? sp.agent : inputs.agent.default)
+  const [agent, setAgent] = useState(initialAgent)
+  const [dealType, setDealType] = useState(initialDealType)
   const [expenses, setExpenses] = useState(
     inRange(sp.expenses, inputs.expenses.min, inputs.expenses.max) ? sp.expenses : inputs.expenses.default,
   )
@@ -61,6 +72,7 @@ export default function Calculator() {
     expenses,
     keep: Math.round(keep),
     keepPct: Math.round(keepPct),
+    dealType,
     pathId: selPath?.id,
     pathLabel: selPath?.label,
     horizon,
@@ -124,7 +136,14 @@ export default function Calculator() {
               </p>
             </div>
 
-            <DealType value={agent} onPick={setAgent} />
+            <DealSelect
+              value={dealType}
+              onChange={(id) => {
+                setDealType(id)
+                const preset = dealPresets.find((d) => d.id === id)
+                if (preset) setAgent(preset.agent)
+              }}
+            />
             <Slider
               cfg={inputs.agent}
               value={agent}
@@ -260,33 +279,35 @@ function Slider({ cfg, value, onChange, display, help }) {
   )
 }
 
-// Deal-type quick-set: snaps the agent fee to a realistic value per deal type.
-function DealType({ value, onPick }) {
-  const active = cfg.dealTypes.find((d) => d.agent === value)
+// Deal type / league selector: snaps the agent fee to a realistic per-league value.
+function DealSelect({ value, onChange }) {
+  const active = dealPresets.find((d) => d.id === value)
   return (
     <div className="block">
       <div className="flex items-baseline justify-between">
         <span className="text-sm uppercase tracking-[0.12em] text-bone/60">{cfg.dealTypeLabel}</span>
         {active && <span className="font-display text-sm text-bone/55">{active.agent}% agent</span>}
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {cfg.dealTypes.map((d) => (
-          <button
-            key={d.id}
-            type="button"
-            onClick={() => onPick(d.agent)}
-            title={d.note}
-            className={`rounded-full border px-3.5 py-1.5 font-display text-xs uppercase tracking-[0.1em] transition-all ${
-              active?.id === d.id
-                ? 'border-ember bg-ember text-ink'
-                : 'border-bone/25 text-bone/60 hover:border-bone/50'
-            }`}
-          >
-            {d.label}
-          </button>
-        ))}
+      <div className="relative mt-3">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label="Select deal type or league"
+          className="w-full appearance-none rounded-full border border-bone/20 bg-ink/60 px-6 py-3.5 pr-12 font-display text-lg text-bone outline-none transition-colors focus:border-ember"
+        >
+          {cfg.dealGroups.map((g) => (
+            <optgroup key={g.label} label={g.label} className="bg-ink text-bone">
+              {g.options.map((o) => (
+                <option key={o.id} value={o.id} className="bg-ink text-bone">
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <span className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-ember">▾</span>
       </div>
-      <p className="mt-2 text-xs text-bone/40">{active ? active.note : 'pick the deal type that fits — or set the fee yourself below'}</p>
+      {active && <p className="mt-2 text-xs text-bone/40">{active.note}</p>}
     </div>
   )
 }

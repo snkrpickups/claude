@@ -178,7 +178,7 @@ export const footer = {
     { label: 'The Hustle Academy™', href: '#offering-hustle-academy' },
     { label: 'Legaci Amplify™', href: '#offering-legaci-amplify' },
     { label: 'Join The Forge', href: '/contact' },
-    { label: 'Community Impact Statement', href: '/community-impact-statement.pdf', external: true },
+    { label: 'Community Impact Statement', href: import.meta.env.BASE_URL + 'community-impact-statement.pdf', external: true },
     { label: 'Contact Us', href: '/contact#form' },
   ],
   socials: [{ label: 'LinkedIn', href: 'https://linkedin.com/company/legaci-forge' }],
@@ -328,17 +328,41 @@ export const calculator = {
     { code: 'WI', name: 'Wisconsin', rate: 7.65 },
     { code: 'WY', name: 'Wyoming', rate: 0 },
   ],
-  // Deal type sets a realistic agent fee (union-capped for contracts; higher
-  // for marketing/NIL). Picking one snaps the agent slider; it stays editable.
-  dealTypeLabel: 'Deal type',
+  // Deal type / league sets a realistic agent fee (union-capped for league
+  // contracts; FIFA-capped for soccer; higher for NIL/endorsement). Picking one
+  // snaps the agent slider; it stays editable. Grouped for the dropdown.
+  dealTypeLabel: 'Deal type / league',
   defaultDealType: 'nil',
-  dealTypes: [
-    { id: 'contract', label: 'Pro contract', agent: 3, note: 'team-sport contract — union-capped (~3–4%)' },
-    { id: 'nil', label: 'NIL', agent: 15, note: 'college NIL — representation typically 15–20%' },
-    { id: 'endorsement', label: 'Endorsement', agent: 18, note: 'brand / sponsorship deal — typically 15–20%' },
-    { id: 'individual', label: 'Individual / prize', agent: 10, note: 'tennis, golf, Olympic, combat — ~10–20%' },
+  dealGroups: [
+    {
+      label: 'Team contract',
+      options: [
+        { id: 'nfl', label: 'NFL (football)', agent: 3, note: 'NFLPA caps agent fees at 3%' },
+        { id: 'nba', label: 'NBA (basketball)', agent: 4, note: 'NBPA caps agent fees at 4%' },
+        { id: 'wnba', label: 'WNBA (basketball)', agent: 4, note: 'WNBPA-certified — capped around 4%' },
+        { id: 'mlb', label: 'MLB (baseball)', agent: 5, note: 'not union-capped — typically 4–5%' },
+        { id: 'nhl', label: 'NHL (hockey)', agent: 4, note: 'NHLPA-certified — typically 3–4%' },
+        { id: 'mls', label: 'MLS (soccer)', agent: 3, note: 'FIFA player-side cap (~3%)' },
+        { id: 'nwsl', label: 'NWSL (soccer)', agent: 3, note: 'FIFA player-side cap (~3%)' },
+        { id: 'usl-super', label: 'USL Super League (soccer)', agent: 3, note: 'FIFA player-side cap (~3%)' },
+        { id: 'usl', label: 'USL Championship / League One (soccer)', agent: 3, note: 'FIFA player-side cap (~3%)' },
+      ],
+    },
+    {
+      label: 'Off-field',
+      options: [
+        { id: 'nil', label: 'NIL deal', agent: 15, note: 'college NIL — representation typically 15–20%' },
+        { id: 'endorsement', label: 'Endorsement / sponsorship', agent: 18, note: 'brand deal — typically 15–20%' },
+      ],
+    },
+    {
+      label: 'Individual sport',
+      options: [
+        { id: 'individual', label: 'Tennis / Golf / Olympic / Combat', agent: 10, note: 'individual sport — ~10–20%' },
+      ],
+    },
   ],
-  agentHelp: 'typical: ~3% pro contract · 15–20% NIL / endorsement',
+  agentHelp: 'caps vary by league — pick your deal type above, or set it yourself',
   expensesHelp: 'typical: ~10–20% (training, travel, equipment & lifestyle)',
   inputs: {
     deal: { label: 'Deal value', min: 50000, max: 10000000, step: 50000, default: 1000000, prefix: '$' },
@@ -346,6 +370,9 @@ export const calculator = {
     expenses: { label: 'Training, travel & lifestyle', min: 0, max: 40, step: 1, default: 15, suffix: '%' },
   },
 }
+
+// Flattened lookup of every deal-type/league preset.
+export const dealPresets = calculator.dealGroups.flatMap((g) => g.options)
 
 // ─────────────────────────────────────────────────────────────────────────
 //  WAITLIST — "Join The Forge"

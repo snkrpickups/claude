@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 //  Deep-link params: encode/decode a shared calculator scenario.
 //  Compact keys: f=from(name) d=deal s=state a=agent e=expenses p=path y=years
 // ─────────────────────────────────────────────────────────────────────────
-export function buildShareUrl({ name, deal, stateCode, agent, expenses, pathId, horizon }) {
+export function buildShareUrl({ name, deal, stateCode, agent, expenses, pathId, horizon, dealType }) {
   const base = window.location.origin + import.meta.env.BASE_URL
   const q = new URLSearchParams()
   if (name) q.set('f', name)
@@ -12,6 +12,7 @@ export function buildShareUrl({ name, deal, stateCode, agent, expenses, pathId, 
   q.set('s', stateCode)
   q.set('a', agent)
   q.set('e', expenses)
+  if (dealType) q.set('t', dealType)
   if (pathId) q.set('p', pathId)
   if (horizon) q.set('y', horizon)
   return `${base}?${q.toString()}`
@@ -29,6 +30,7 @@ export function getShareParams() {
     stateCode: q.get('s') || undefined,
     agent: num(q.get('a')),
     expenses: num(q.get('e')),
+    dealType: q.get('t') || undefined,
     pathId: q.get('p') || undefined,
     horizon: num(q.get('y')),
   }
