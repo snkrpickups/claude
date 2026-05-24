@@ -328,9 +328,21 @@ export const calculator = {
     { code: 'WI', name: 'Wisconsin', rate: 7.65 },
     { code: 'WY', name: 'Wyoming', rate: 0 },
   ],
+  // Deal type sets a realistic agent fee (union-capped for contracts; higher
+  // for marketing/NIL). Picking one snaps the agent slider; it stays editable.
+  dealTypeLabel: 'Deal type',
+  defaultDealType: 'nil',
+  dealTypes: [
+    { id: 'contract', label: 'Pro contract', agent: 3, note: 'team-sport contract — union-capped (~3–4%)' },
+    { id: 'nil', label: 'NIL', agent: 15, note: 'college NIL — representation typically 15–20%' },
+    { id: 'endorsement', label: 'Endorsement', agent: 18, note: 'brand / sponsorship deal — typically 15–20%' },
+    { id: 'individual', label: 'Individual / prize', agent: 10, note: 'tennis, golf, Olympic, combat — ~10–20%' },
+  ],
+  agentHelp: 'typical: ~3% pro contract · 15–20% NIL / endorsement',
+  expensesHelp: 'typical: ~10–20% (training, travel, equipment & lifestyle)',
   inputs: {
     deal: { label: 'Deal value', min: 50000, max: 10000000, step: 50000, default: 1000000, prefix: '$' },
-    agent: { label: 'Agent / management', min: 0, max: 20, step: 0.5, default: 10, suffix: '%' },
+    agent: { label: 'Agent / management', min: 0, max: 20, step: 0.5, default: 15, suffix: '%' },
     expenses: { label: 'Training, travel & lifestyle', min: 0, max: 40, step: 1, default: 15, suffix: '%' },
   },
 }

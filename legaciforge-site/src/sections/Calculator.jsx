@@ -124,8 +124,21 @@ export default function Calculator() {
               </p>
             </div>
 
-            <Slider cfg={inputs.agent} value={agent} onChange={setAgent} display={`${agent}%`} />
-            <Slider cfg={inputs.expenses} value={expenses} onChange={setExpenses} display={`${expenses}%`} />
+            <DealType value={agent} onPick={setAgent} />
+            <Slider
+              cfg={inputs.agent}
+              value={agent}
+              onChange={setAgent}
+              display={`${agent}%`}
+              help={cfg.agentHelp}
+            />
+            <Slider
+              cfg={inputs.expenses}
+              value={expenses}
+              onChange={setExpenses}
+              display={`${expenses}%`}
+              help={cfg.expensesHelp}
+            />
           </div>
 
           {/* Result */}
@@ -222,7 +235,7 @@ export default function Calculator() {
   )
 }
 
-function Slider({ cfg, value, onChange, display }) {
+function Slider({ cfg, value, onChange, display, help }) {
   const pct = ((value - cfg.min) / (cfg.max - cfg.min)) * 100
   return (
     <label className="block">
@@ -242,7 +255,39 @@ function Slider({ cfg, value, onChange, display }) {
           background: `linear-gradient(to right, var(--color-ember) ${pct}%, rgba(245,243,238,0.15) ${pct}%)`,
         }}
       />
+      {help && <p className="mt-2 text-xs text-bone/40">{help}</p>}
     </label>
+  )
+}
+
+// Deal-type quick-set: snaps the agent fee to a realistic value per deal type.
+function DealType({ value, onPick }) {
+  const active = cfg.dealTypes.find((d) => d.agent === value)
+  return (
+    <div className="block">
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm uppercase tracking-[0.12em] text-bone/60">{cfg.dealTypeLabel}</span>
+        {active && <span className="font-display text-sm text-bone/55">{active.agent}% agent</span>}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {cfg.dealTypes.map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            onClick={() => onPick(d.agent)}
+            title={d.note}
+            className={`rounded-full border px-3.5 py-1.5 font-display text-xs uppercase tracking-[0.1em] transition-all ${
+              active?.id === d.id
+                ? 'border-ember bg-ember text-ink'
+                : 'border-bone/25 text-bone/60 hover:border-bone/50'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-bone/40">{active ? active.note : 'pick the deal type that fits — or set the fee yourself below'}</p>
+    </div>
   )
 }
 
