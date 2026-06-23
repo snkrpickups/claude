@@ -13,13 +13,18 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from . import ev as ev_mod
 from . import odds_math
 
 # A snapshot is anything with these attributes (sqlite3.Row or dataclass).
 OutcomeKey = Tuple[str, str, str, Optional[float]]  # game_id, market, outcome, line
+
+# (effective_decimal, fee_per_unit) for a (book, gross_decimal). Lets the EV gate
+# evaluate fee-charging venues like Kalshi on net odds without Pillar A knowing
+# the fee schedule. Returns the input unchanged for fee-free books.
+FeeAdjuster = Callable[[str, float], Tuple[float, float]]
 
 
 @dataclass
@@ -28,13 +33,19 @@ class Candidate:
     market: str
     outcome: str
     line: Optional[float]
-    book: str               # soft book we'd bet at
+    book: str               # soft book / venue we'd bet at
     american: int
-    decimal: float
+    decimal: float          # raw price shown on the ticket / used for CLV
     fair_prob: float        # devigged sharp (or consensus) probability
-    market_implied: float   # soft book implied
-    edge: float             # p * d - 1
+    market_implied: float   # soft book implied (raw)
+    edge: float             # p * stake_decimal - 1  (net of fees)
     fair_source: str        # 'pinnacle' or 'consensus'
+    stake_decimal: Optional[float] = None  # odds used for EV/Kelly (net of fees)
+    fee_per_unit: float = 0.0              # venue fee folded into stake_decimal
+
+    def __post_init__(self):
+        if self.stake_decimal is None:
+            self.stake_decimal = self.decimal
 
 
 def _get(row, key):
@@ -100,6 +111,7 @@ def find_candidates(
     soft_books: Sequence[str],
     ev_threshold: float = ev_mod.DEFAULT_EV_THRESHOLD,
     use_consensus_fallback: bool = True,
+    fee_adjuster: Optional[FeeAdjuster] = None,
 ) -> List[Candidate]:
     """Scan a snapshot batch and return +EV candidates that clear the EV gate.
 
@@ -138,7 +150,9 @@ def find_candidates(
             if p is None:
                 continue  # soft line doesn't match a sharp/consensus outcome
             d = float(_get(r, "decimal"))
-            edge = ev_mod.ev_per_unit(p, d)
+            # Fold venue fees (e.g. Kalshi) into the odds the gate evaluates.
+            stake_d, fee = (fee_adjuster(book, d) if fee_adjuster else (d, 0.0))
+            edge = ev_mod.ev_per_unit(p, stake_d)
             if edge > ev_threshold:
                 candidates.append(
                     Candidate(
@@ -153,6 +167,8 @@ def find_candidates(
                         market_implied=float(_get(r, "implied")),
                         edge=edge,
                         fair_source=fair_source,
+                        stake_decimal=stake_d,
+                        fee_per_unit=fee,
                     )
                 )
     return candidates

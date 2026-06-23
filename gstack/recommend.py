@@ -38,9 +38,11 @@ def size_and_persist(
     tickets: List[Ticket] = []
 
     for c in ranked:
+        # Size on the odds net of venue fees (Kalshi); the ticket still shows the
+        # raw price (c.decimal). For fee-free books stake_decimal == decimal.
         stake = kelly_mod.kelly_stake(
             p=c.fair_prob,
-            d=c.decimal,
+            d=c.stake_decimal or c.decimal,
             bankroll=config.bankroll,            # validated above
             kelly_multiplier=config.kelly_multiplier,
             max_stake_per_bet=config.max_stake_per_bet,

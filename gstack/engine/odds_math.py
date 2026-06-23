@@ -46,6 +46,24 @@ def decimal_to_implied(decimal: float) -> float:
     return 1 / decimal
 
 
+def kalshi_price_to_decimal(cents: float) -> float:
+    """Convert a Kalshi contract price (1-99 cents) to GROSS decimal odds.
+
+    A YES contract costs ``cents/100`` dollars and settles at $1.00, so the
+    gross decimal odds are ``1 / price``. Fees are applied separately
+    (see engine/fees.py) — this is the no-fee price the market quotes, i.e. the
+    venue's own implied probability is exactly ``cents/100``.
+
+    >>> kalshi_price_to_decimal(48)
+    2.0833333333333335
+    """
+    if not 0 < cents < 100:
+        raise ValueError(f"Kalshi price must be in (0, 100) cents, got {cents!r}.")
+    price = cents / 100
+    return 1 / price
+
+
+
 def american_to_implied(american: int | float) -> float:
     """Convenience: American odds straight to implied probability."""
     return decimal_to_implied(american_to_decimal(american))

@@ -74,6 +74,33 @@ def cmd_poll(args) -> int:
     return 0
 
 
+def cmd_poll_wc(args) -> int:
+    from .clients.kalshi_client import KalshiClient
+
+    config = load_config()
+    config.sport = "SOCCER_WC"
+    conn = _conn(config)
+    budget = BudgetGuard(conn, config.request_budget)
+    odds_client = OddsClient(conn, config, budget)
+    kalshi_client = KalshiClient(conn, maker=config.kalshi_maker)
+    report = scheduler.run_world_cup_once(conn, config, odds_client, kalshi_client)
+
+    src = "cache" if report.poll.from_cache else "live"
+    print(
+        f"poll-wc: {report.poll.snapshots_written} sharp snapshots ({src}), "
+        f"{report.poll.requests_spent} request(s) spent, "
+        f"{report.candidates} candidate(s), {len(report.tickets)} ticket(s)"
+    )
+    if report.tickets:
+        alerter = TelegramAlerter(config)
+        for t in report.tickets:
+            game = repo.get_game(conn, t.rec.game_id)
+            print()
+            print(format_ticket(t.rec, game=game, kelly_multiplier=config.kelly_multiplier))
+            alerter.send_recommendation(t.rec, game=game)
+    return 0
+
+
 def cmd_recs(args) -> int:
     config = load_config()
     conn = _conn(config)
@@ -171,6 +198,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("poll", help="run one budgeted fetch + analysis").set_defaults(
         func=cmd_poll
     )
+    sub.add_parser(
+        "poll-wc", help="World Cup: sharp poll + Kalshi pull + analysis"
+    ).set_defaults(func=cmd_poll_wc)
     sub.add_parser("recs", help="print recommendations as tickets").set_defaults(
         func=cmd_recs
     )

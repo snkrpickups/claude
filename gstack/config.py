@@ -62,6 +62,11 @@ class Config:
     bankroll: Optional[float] = _env_float("BANKROLL", None)
     max_stake_per_bet: Optional[float] = _env_float("MAX_STAKE_PER_BET", None)
 
+    # --- Kalshi venue (World Cup execution venue; free API, not budgeted) ---
+    kalshi_series_ticker: str = os.environ.get("KALSHI_SERIES_TICKER", "KXWORLDCUP")
+    kalshi_maker: bool = os.environ.get("KALSHI_MAKER", "").lower() in ("1", "true", "yes")
+    kalshi_fee_coeff: float = _env_float("KALSHI_FEE_COEFF", 0.07)  # type: ignore[assignment]
+
     # --- Storage ---
     db_url: str = os.environ.get("DB_URL", "sqlite:///gstack.db")
 
@@ -73,6 +78,18 @@ class Config:
     # --- Phase 3 (reserved) ---
     llm_api_key: Optional[str] = os.environ.get("LLM_API_KEY")
     llm_monthly_cap_usd: Optional[float] = _env_float("LLM_MONTHLY_CAP_USD", None)
+
+    def sport_profile(self):
+        """Resolve the active sport profile (NBA, SOCCER_WC, ...)."""
+        from .sports import get_profile
+
+        return get_profile(self.sport)
+
+    def kalshi_fee_model(self):
+        """Build the Kalshi fee model from config (used by the EV gate)."""
+        from .engine.fees import KalshiFeeModel
+
+        return KalshiFeeModel(coeff=self.kalshi_fee_coeff, maker=self.kalshi_maker)
 
     def db_path(self) -> str:
         """Resolve a SQLite file path from ``db_url``.

@@ -18,7 +18,8 @@ cp gstack/.env.example .env       # fill in ODDS_API_KEY, BANKROLL, MAX_STAKE_PE
 ## CLI (PRD §10)
 
 ```bash
-gstack poll                       # one budgeted fetch + analysis, emits tickets
+gstack poll                       # NBA: one budgeted fetch + analysis, emits tickets
+gstack poll-wc                    # World Cup: sharp poll (budgeted) + Kalshi pull (free)
 gstack recs                       # print stored recommendations as tickets
 gstack budget --slates-remaining 20 --pulls-per-slate 4
 gstack clv                        # mean CLV + hit rate, by pillar and market
@@ -71,6 +72,35 @@ hand-checked fixture, recommendation persistence, and CLV capture + grading.
 - `engine/ev.py` — `ev_per_unit = p*d - 1`; `is_value` is strictly `> threshold`.
 - `engine/kelly.py` — fractional Kelly; full Kelly is never used directly;
   `MAX_STAKE_PER_BET` is a hard cap.
+
+## World Cup on Kalshi (`gstack poll-wc`)
+
+GSTACK can hunt +EV on **Kalshi** for World Cup matches. The edge thesis is
+unchanged — a sharp book sets the true probability and we bet where the venue is
+cheaper — but Kalshi is the venue instead of a sportsbook:
+
+- **Sharp reference:** Pinnacle/consensus World Cup odds via The Odds API
+  (`SPORT=SOCCER_WC` → sport key `soccer_fifa_world_cup`), devigged as a **3-way**
+  market (Home/Draw/Away).
+- **Venue:** Kalshi YES contracts. A price of `c`¢ is decimal odds `1/(c/100)`,
+  so the existing EV/Kelly/CLV math applies unchanged.
+- **Fees are in the gate.** Kalshi charges `≈ coeff·price·(1−price)` per
+  contract (`KALSHI_FEE_COEFF`, default 0.07) and you cross the bid/ask. GSTACK
+  evaluates every Kalshi candidate on the **fee-adjusted** odds and sizes Kelly
+  on them, so it won't chase edges the fee erases (see
+  `tests/test_world_cup.py::test_fees_kill_a_phantom_edge`). `KALSHI_MAKER=true`
+  models posting at the bid (fee-free).
+- **Budget unchanged.** Kalshi's market-data API is free, so it does **not**
+  count against the Odds-API 500/mo budget — only the sharp poll does.
+- **Matching is conservative.** Kalshi↔sharp team names are normalized
+  (`engine/matching.py`, with an alias map for USA/South Korea/Côte d'Ivoire,
+  etc.); if both teams and the side can't be confidently identified, the market
+  is skipped, never guessed.
+
+Caveats for going live: verify the Kalshi series ticker and the exact fee
+schedule against the live API, and confirm the `normalize_kalshi_events` adapter
+against Kalshi's real `/events` payload shape (it's the one place that knows the
+raw field names). GSTACK still only analyzes — it never places a Kalshi order.
 
 ## Not yet built (by design)
 

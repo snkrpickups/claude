@@ -41,10 +41,14 @@ def format_ticket(
         header = f"{sport} · game {rec.game_id}".strip(" ·")
 
     bet = _fmt_line(rec.market, rec.outcome, rec.line)
-    am = f"{rec.american:+d}"
+    # Kalshi trades in cents (price == implied prob); books quote American odds.
+    if rec.book == "kalshi":
+        price = f"{round(rec.market_implied * 100)}¢ YES"
+    else:
+        price = f"{rec.american:+d}"
     lines = [
         header,
-        f"BET: {bet}  @ {rec.book}  {am}  (dec {rec.decimal:.3f})",
+        f"BET: {bet}  @ {rec.book}  {price}  (dec {rec.decimal:.3f})",
         f"fair p: {_fmt_pct(rec.fair_prob)}   |  market implied: {_fmt_pct(rec.market_implied)}",
         f"edge: +{rec.edge * 100:.1f}%   |   pillar: {rec.pillar}   "
         f"|   {_kelly_label(kelly_multiplier)} stake: ${rec.stake:.2f}",
